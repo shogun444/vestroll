@@ -72,20 +72,25 @@ export class TeamService {
   }
 
   static async getExpenses(organizationId: string) {
-    const expenseTable = sql.raw("expenses");
+    const result = await db.execute<{
+      id: string;
+      expenseName: string;
+      category: string;
+      amount: number;
+      status: string;
+      attachmentUrl: string | null;
+    }>(sql`
+      select
+        id,
+        name as "expenseName",
+        category,
+        amount,
+        status,
+        attachment_url as "attachmentUrl"
+      from expenses
+      where organization_id = ${organizationId}
+    `);
 
-    const rows = await db
-      .select({
-        id: sql<string>`id`,
-        expenseName: sql<string>`name`,
-        category: sql<string>`category`,
-        amount: sql<number>`amount`,
-        status: sql<string>`status`,
-        attachmentUrl: sql<string | null>`attachment_url`,
-      })
-      .from(expenseTable as any)
-      .where(sql`organization_id = ${organizationId}`);
-
-    return rows;
+    return result.rows;
   }
 }
