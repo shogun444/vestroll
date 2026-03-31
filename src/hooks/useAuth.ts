@@ -87,14 +87,14 @@ export const useAuth = (): UseAuthReturn => {
     setError(null);
 
     try {
-      const res = await AuthService.resetPassword({
+      await AuthService.resetPassword({
         password,
         email,
         type,
       });
-      return res;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Password reset failed");
+      throw err; // Re-throw to allow component to handle success/failure
     } finally {
       setIsLoading(false);
     }

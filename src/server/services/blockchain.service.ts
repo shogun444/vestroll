@@ -659,6 +659,7 @@ export class BlockchainService {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (await response.json()) as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ledgerRecord = data._embedded ? (data._embedded as any).records?.[0] : data;
 
     if (!ledgerRecord?.closed_at || ledgerRecord.sequence == null) {
