@@ -143,6 +143,7 @@ export const organizations = pgTable("organizations", {
   billingState: varchar("billing_state", { length: 255 }),
   billingPostalCode: varchar("billing_postal_code", { length: 255 }),
   billingCountry: varchar("billing_country", { length: 255 }),
+  website: varchar("website", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"),
@@ -172,6 +173,7 @@ export const users = pgTable("users", {
   twoFactorLockoutUntil: timestamp("two_factor_lockout_until"),
   failedLoginAttempts: integer("failed_login_attempts").default(0).notNull(),
   lockedUntil: timestamp("locked_until"),
+  accountLockedReason: text("account_locked_reason"),
 
   oauthProvider: oauthProviderEnum("oauth_provider"),
   oauthId: varchar("oauth_id", { length: 255 }),

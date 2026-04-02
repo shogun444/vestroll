@@ -1,5 +1,5 @@
 import { db, emailVerifications, users } from "../db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gt, sql } from "drizzle-orm";
 import { OTPService } from "./otp.service";
 import { UserService } from "./user.service";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../utils/errors";
@@ -20,6 +20,32 @@ export interface VerifyEmailResult {
 
 export class EmailVerificationService {
   
+  
+  private static async checkSoftLockout(userId: string): Promise<void> {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const [result] = await db
+      .select({
+        totalAttempts: sql<number>`sum(${emailVerifications.attempts})`,
+      })
+      .from(emailVerifications)
+      .where(
+        and(
+          eq(emailVerifications.userId, userId),
+          gt(emailVerifications.createdAt, oneHourAgo),
+        ),
+      );
+
+    const totalFailed = Number(result?.totalAttempts || 0);
+
+    if (totalFailed >= 10) {
+      Logger.warn("Soft lockout triggered: too many failed OTP attempts in 1 hour", { userId, totalFailed });
+      throw new ForbiddenError(
+        "Too many failed verification attempts. Please try again in 1 hour.",
+      );
+    }
+  }
+
   static async verifyEmail(email: string, otp: string): Promise<VerifyEmailResult> {
 
     function maskEmail(email: string): string {
@@ -40,6 +66,8 @@ export class EmailVerificationService {
     if (user.status === "active") {
       throw new BadRequestError("Email is already verified");
     }
+
+    await this.checkSoftLockout(user.id);
 
     const [verificationRecord] = await db
       .select()

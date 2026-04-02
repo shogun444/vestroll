@@ -132,10 +132,9 @@ export class TwoFactorService {
     const codes: string[] = [];
 
     for (let i = 0; i < SECURITY_CONFIG.backupCodeCount; i++) {
-      const part1 = crypto.randomBytes(2).toString("hex").toUpperCase();
-      const part2 = crypto.randomBytes(2).toString("hex").toUpperCase();
-      const part3 = crypto.randomBytes(2).toString("hex").toUpperCase();
-      codes.push(`${part1}-${part2}-${part3}`);
+      // Generate an 8-digit numeric code
+      const code = Math.floor(10000000 + Math.random() * 90000000).toString();
+      codes.push(code);
     }
 
     return codes;

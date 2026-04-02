@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { AppError, ValidationError } from "./errors";
 import { ApiResponse } from "./api-response";
 import { AuthUtils } from "./auth";
+import { Logger } from "../services/logger.service";
+import crypto from "crypto";
 import { z } from "zod";
 
 export interface RequestMetadata {
@@ -63,7 +65,11 @@ export function withHandler<T = any>(
         }
       }
 
-      return await handler!(req, { ...ctx, body, metadata });
+      const responseId = crypto.randomUUID();
+
+      const response = await handler!(req, { ...ctx, body, metadata });
+      response.headers.set("X-Response-Id", responseId);
+      return response;
     } catch (error) {
       const instance = req?.nextUrl?.pathname ?? "unknown";
 
@@ -73,13 +79,18 @@ export function withHandler<T = any>(
         ) as NextResponse;
       }
 
-      console.error(`[Unhandled Error] ${instance}`, error);
-      return ApiResponse.error(
+      const responseId = crypto.randomUUID();
+      Logger.error(`[Unhandled Error] ${instance}`, { error, responseId });
+      
+      const response = ApiResponse.error(
         "An unexpected error occurred. Please try again later.",
         500,
         null,
         req
       ) as NextResponse;
+
+      response.headers.set("X-Response-Id", responseId);
+      return response;
     }
   };
 }
