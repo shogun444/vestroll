@@ -234,9 +234,17 @@ export const ChangePasswordSchema = z
       .describe(
         "The new password to replace the current one. Must be at least 8 characters.",
       ),
+    confirmPassword: z
+      .string()
+      .min(1, "Confirm password is required")
+      .describe("Must match the new password exactly."),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New passwords do not match",
+    path: ["confirmPassword"],
   })
   .describe(
-    "Changes the password for an authenticated user. Requires the existing password as confirmation before the new password is applied.",
+    "Changes the password for an authenticated user. Requires the existing password as confirmation and a matching new password pair.",
   );
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;

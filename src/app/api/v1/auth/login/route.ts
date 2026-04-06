@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
 import { AuthService } from "@/server/services/auth.service";
 import { LoginSchema } from "@/server/validations/login.schema";
 import { ApiResponse } from "@/server/utils/api-response";
-import { AuthUtils } from "@/server/utils/auth";
-import { AppError, ValidationError } from "@/server/utils/errors";
+import { withHandler } from "@/server/utils/with-error-handler";
 
 /**
  * @swagger
@@ -38,24 +36,12 @@ import { AppError, ValidationError } from "@/server/utils/errors";
  *       400:
  *         description: Bad request - Validation error
  */
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-
-    const validatedData = LoginSchema.safeParse(body);
-    if (!validatedData.success) {
-      throw new ValidationError(
-        "Invalid request body",
-        validatedData.error.flatten().fieldErrors as any,
-      );
-    }
-
-    const ipAddress = AuthUtils.getClientIp(request);
-    const userAgent = AuthUtils.getUserAgent(request);
-
-    const result = await AuthService.login(validatedData.data, {
-      ipAddress,
-      userAgent,
+export const POST = withHandler(
+  { schema: LoginSchema },
+  async (_req, { body, metadata }) => {
+    const result = await AuthService.login(body, {
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
     });
 
     const response = ApiResponse.success(result, "Login successful");
@@ -65,20 +51,11 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict" as const,
       path: "/",
-      maxAge: validatedData.data.rememberMe
-        ? 30 * 24 * 60 * 60
-        : 7 * 24 * 60 * 60,
+      maxAge: body.rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
     };
 
     response.cookies.set("refreshToken", result.refreshToken, cookieOptions);
 
     return response;
-  } catch (error) {
-    if (error instanceof AppError) {
-      return ApiResponse.error(error.message, error.statusCode, error.errors);
-    }
-
-    console.error("Login route error:", error);
-    return ApiResponse.error("Internal server error", 500);
   }
-}
+);

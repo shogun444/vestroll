@@ -163,7 +163,7 @@ export default function AddressBook() {
           </div>
         ) : (
           // Addresses list
-          <div>
+          <div className="mt-6">
             <div className="grid gap-6 md:grid-cols-2">
               {addresses.map((address) => (
                 <div

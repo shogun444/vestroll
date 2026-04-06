@@ -1,9 +1,7 @@
-import { NextRequest } from "next/server";
 import { RegisterSchema } from "@/server/validations/auth.schema";
 import { AuthService } from "@/server/services/auth.service";
 import { ApiResponse } from "@/server/utils/api-response";
-import { AppError } from "@/server/utils/errors";
-import { ZodError } from "zod";
+import { withHandler } from "@/server/utils/with-error-handler";
 
 /**
  * @swagger
@@ -36,31 +34,11 @@ import { ZodError } from "zod";
  *       400:
  *         description: Bad request - Validation failed
  */
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const validatedData = RegisterSchema.parse(body);
-
-    const result = await AuthService.register(validatedData);
+export const POST = withHandler(
+  { schema: RegisterSchema },
+  async (_req, { body }) => {
+    const result = await AuthService.register(body);
 
     return ApiResponse.success(result, "Verification email sent", 201);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      const fieldErrors: Record<string, string> = {};
-      error.issues.forEach((issue) => {
-        if (issue.path[0]) {
-          fieldErrors[issue.path[0].toString()] = issue.message;
-        }
-      });
-      return ApiResponse.error("Validation failed", 400, { fieldErrors });
-    }
-
-    if (error instanceof AppError) {
-      return ApiResponse.error(error.message, error.statusCode, error.errors);
-    }
-
-    console.error("[Registration Error]", error);
-
-    return ApiResponse.error("Internal server error", 500);
   }
-}
+);

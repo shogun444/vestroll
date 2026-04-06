@@ -1,3 +1,5 @@
+import { apiClient } from "../api-client";
+
 interface LoginCredentials {
   email: string;
   password: string;
@@ -12,6 +14,7 @@ interface ResetPasswordData {
 interface ForgotPasswordData {
   email: string;
 }
+
 interface RegisterData {
   businessEmail: string;
   firstName: string;
@@ -32,86 +35,23 @@ interface CompleteRegistrationData {
 
 export class AuthService {
   static async login(credentials: LoginCredentials) {
-    const response = await fetch("/api/v1/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Login failed");
-    }
-
-    return response.json();
+    return apiClient.post("/api/v1/auth/login", credentials);
   }
+
   static async register(credentials: RegisterData) {
-    const response = await fetch("/api/v1/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Registration failed");
-    }
-
-    return response.json();
+    return apiClient.post("/api/v1/auth/register", credentials);
   }
+
   static async forgotPassword(data: ForgotPasswordData) {
-    const response = await fetch("/api/v1/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      if (response.status === 500) {
-        throw new Error(
-          "Internal Server Error: Please try again later or contact support.",
-        );
-      }
-      const error = await response.json();
-      throw new Error(error.message || "Failed to send reset link");
-    }
-
-    return response.json();
+    return apiClient.post("/api/v1/auth/forgot-password", data);
   }
 
   static async resetPassword(data: ResetPasswordData) {
-    const response = await fetch("/api/v1/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      if (response.status === 500) {
-        throw new Error(
-          "Internal Server Error: Please try again later or contact support.",
-        );
-      }
-      const error = await response.json();
-      throw new Error(error.message || "Password reset failed");
-    }
-
-    return response.json();
+    return apiClient.post("/api/v1/auth/reset-password", data);
   }
 
   static async completeRegistration(data: CompleteRegistrationData) {
-    const response = await fetch("/api/v1/auth/complete-registration", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Registration completion failed");
-    }
-
-    return response.json();
+    return apiClient.post("/api/v1/auth/complete-registration", data);
   }
 }
 

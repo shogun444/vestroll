@@ -22,6 +22,7 @@ interface FormData {
   size: string | null;
   vatNumber: string | null;
   companyWebsite: string;
+  primaryCurrency: string;
 }
 
 export default function CompanyInfoPage() {
@@ -41,6 +42,7 @@ export default function CompanyInfoPage() {
     size: null,
     vatNumber: null,
     companyWebsite: "",
+    primaryCurrency: "USD",
   });
 
   const isFormValid = true;
@@ -187,6 +189,16 @@ export default function CompanyInfoPage() {
                 setFormData({ ...formData, companyWebsite: e.target.value })
               }
               placeholder="-- "
+            />
+
+            <CustomSelect
+              label="Primary Currency"
+              options={["USD", "NGN", "XLM"]}
+              value={formData.primaryCurrency}
+              onChange={(value: string) =>
+                setFormData((prev) => ({ ...prev, primaryCurrency: value }))
+              }
+              placeholder="Select currency"
             />
           </div>
 

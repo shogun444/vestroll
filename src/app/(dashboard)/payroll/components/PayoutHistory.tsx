@@ -12,7 +12,7 @@ interface Invoice {
   title: string;
   amount: number;
   paidIn: string;
-  status: 'Pending' | 'Overdue' | 'Paid';
+  status: 'Pending' | 'Overdue' | 'Paid' | 'In-Progress';
   issueDate: string;
   name?: string;
   number?: string;
@@ -56,6 +56,18 @@ const invoices: Invoice[] = [
     name: 'Treasury Settlement Invoice',
     number: '12',
     company: 'Vestroll Treasury',
+  },
+  {
+    id: '4',
+    invoiceNo: '18',
+    title: '[CUR]8/hr',
+    amount: 640,
+    paidIn: 'NGN',
+    status: 'In-Progress',
+    issueDate: '26th Oct 2025',
+    name: 'Contractor Bank Transfer',
+    number: '18',
+    company: 'Vestroll Nigeria',
   },
 ];
 
@@ -120,6 +132,8 @@ const PayoutHistory = () => {
         return `border-[#C64242] bg-[#FEECEC] text-[#C64242]`;
       case 'Paid':
         return `border-[#26902B] bg-[#EDFEEC] text-[#26902B]`;
+      case 'In-Progress':
+        return `border-[#3B82F6] bg-[#EFF6FF] text-[#3B82F6]`;
       default:
         return;
     }

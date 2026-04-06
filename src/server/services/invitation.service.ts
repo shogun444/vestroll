@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { addDays, isPast } from "date-fns";
 import type { SQL } from "drizzle-orm";
 import { EmailService } from "./email.service";
+import { PaginatedResponse, toPaginatedResponse } from "@/types/pagination";
 
 export type InvitationRole =
   | "admin"
@@ -209,7 +210,7 @@ class InvitationService {
       page?: number;
       limit?: number;
     } = {},
-  ): Promise<{ invitations: InvitationWithDetails[]; total: number }> {
+  ): Promise<PaginatedResponse<InvitationWithDetails>> {
     const { status, role, page = 1, limit = 20 } = options;
     const offset = (page - 1) * limit;
 
@@ -268,10 +269,7 @@ class InvitationService {
       .from(organizationInvitations)
       .where(and(...whereConditions));
 
-    return {
-      invitations,
-      total: Number(count),
-    };
+    return toPaginatedResponse(invitations, page, limit, Number(count));
   }
 
   async acceptInvitation(token: string, userId: string): Promise<void> {

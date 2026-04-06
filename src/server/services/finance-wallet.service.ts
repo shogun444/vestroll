@@ -40,7 +40,33 @@ function generateVirtualAccountNumber() {
   return `${timeSeed}${randomSeed}`;
 }
 
+/**
+ * Mock conversion rates. In a real application, these would be fetched
+ * from an oracle or real-time exchange API (e.g. Stellar SDEX or Binance).
+ */
+const MOCK_XLM_TO_NGN_RATE = 1500.50;
+
 export class FinanceWalletService {
+  /**
+   * Converts an amount of XLM to NGN (Kobo representation).
+   * @param xlmAmount - Amount in XLM (whole numbers + decimals).
+   * @returns Amount in Kobo (NGN * 100).
+   */
+  static convertXlmToNgn(xlmAmount: number): bigint {
+    const ngnValue = xlmAmount * MOCK_XLM_TO_NGN_RATE;
+    return BigInt(Math.round(ngnValue * 100)); // Return in kobo
+  }
+
+  /**
+   * Converts an amount of NGN (Kobo) to XLM.
+   * @param ngnKoboAmount - Amount in Kobo (NGN * 100).
+   * @returns Amount in XLM (float).
+   */
+  static convertNgnToXlm(ngnKoboAmount: bigint): number {
+    const ngnValue = Number(ngnKoboAmount) / 100;
+    return ngnValue / MOCK_XLM_TO_NGN_RATE;
+  }
+
   static async getOrganizationWallet(organizationId: string) {
     if (!organizationId) {
       throw new BadRequestError("User is not associated with any organization");

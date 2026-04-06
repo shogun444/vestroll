@@ -30,6 +30,7 @@ export function AddFundsModal({ open, onOpenChange }: AddFundsModalProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<"monnify" | "flutterwave">("monnify");
 
   useEffect(() => {
     if (!open) {
@@ -140,6 +141,31 @@ export function AddFundsModal({ open, onOpenChange }: AddFundsModalProps) {
           </div>
 
           <div className="space-y-4 px-6 py-6">
+            {/* Provider Selector */}
+            <div className="flex gap-2 rounded-xl bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => setSelectedProvider("monnify")}
+                className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
+                  selectedProvider === "monnify"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Monnify
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedProvider("flutterwave")}
+                className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
+                  selectedProvider === "flutterwave"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Flutterwave
+              </button>
+            </div>
             {isLoading ? (
               <div className="flex min-h-52 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
                 <div className="flex items-center gap-3 text-sm font-medium text-slate-600">

@@ -8,6 +8,8 @@ import {
   UsersIcon,
   GlobeAltIcon,
   ShieldCheckIcon,
+  BellIcon,
+  CreditCardIcon,
 } from "@heroicons/react/24/outline";
 import { ArrowLeft, Camera } from "lucide-react";
 import ImageUploadModal from "@/components/features/profile-settings/ImageUploadModal";
@@ -120,7 +122,7 @@ function HeaderTab({
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState("Company");
-  const tabs = ["Company", "Permissions", "Hiring templates", "Address book"];
+  const tabs = ["Company", "Permissions", "Payment Methods", "Notifications"];
 
   // ── Logo state ──────────────────────────────────────────────────────────────
   const [logoSrc, setLogoSrc] = useState("/touchpoint360.png");
@@ -463,6 +465,68 @@ export default function Page() {
               </div>
             </SectionCard>
           </motion.div>
+          {/* Email Notifications & Security hookup */}
+          {activeTab === "Notifications" && (
+            <motion.div variants={itemVariants} className="mx-4 mt-6 max-w-213">
+              <SectionCard
+                title="Email Notification Preferences"
+                action={<BellIcon className="h-5 w-5 text-gray-400" />}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50 transition-colors">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900">Security Alerts</h4>
+                      <p className="text-xs text-gray-500">Get notified about new logins and password changes</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between p-4 border rounded-xl hover:bg-gray-50 transition-colors">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900">Payroll Reports</h4>
+                      <p className="text-xs text-gray-500">Receive weekly summaries of outbound transactions</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </SectionCard>
+            </motion.div>
+          )}
+
+          {/* Payment Methods Config */}
+          {activeTab === "Payment Methods" && (
+            <motion.div variants={itemVariants} className="mx-4 mt-6 max-w-213">
+              <SectionCard
+                title="Fiat Payment Processors"
+                action={<CreditCardIcon className="h-5 w-5 text-gray-400" />}
+              >
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 mb-4">Select your preferred payment processor for virtual accounts and fiat disbursement. This preference is used globally for NGN routing.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="relative flex flex-col p-5 border-2 cursor-pointer rounded-xl hover:bg-gray-50 border-purple-600 bg-purple-50">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-gray-900">Monnify</span>
+                        <input type="radio" name="paymentProvider" value="monnify" className="w-5 h-5 text-purple-600 focus:ring-purple-500" defaultChecked />
+                      </div>
+                      <span className="text-sm text-gray-500">Fast virtual account generation and reliable NGN disbursement. Default choice.</span>
+                    </label>
+                    <label className="relative flex flex-col p-5 border cursor-pointer rounded-xl hover:bg-gray-50 border-gray-200">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-gray-900">Flutterwave</span>
+                        <input type="radio" name="paymentProvider" value="flutterwave" className="w-5 h-5 text-purple-600 focus:ring-purple-500" />
+                      </div>
+                      <span className="text-sm text-gray-500">Alternative processor for backup and specialized remittance rails.</span>
+                    </label>
+                  </div>
+                </div>
+              </SectionCard>
+            </motion.div>
+          )}
         </motion.div>
       </AnimatePresence>
 

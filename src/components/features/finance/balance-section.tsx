@@ -9,9 +9,10 @@ import { AddFundsModal } from "@/components/features/finance/AddFundsModal";
 interface BalanceSectionProps {
   balance: string;
   change: string;
+  ngnBalance?: string;
 }
 
-export function BalanceSection({ balance, change }: BalanceSectionProps) {
+export function BalanceSection({ balance, change, ngnBalance }: BalanceSectionProps) {
   const [isAddFundsOpen, setIsAddFundsOpen] = useState(false);
 
   const handleFundWallet = () => {
@@ -31,6 +32,11 @@ export function BalanceSection({ balance, change }: BalanceSectionProps) {
         <h1 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-2 dark:text-white">
           {balance}
         </h1>
+        {ngnBalance && (
+          <p className="text-base font-medium text-gray-500 mb-1 dark:text-gray-400">
+            ≈ ₦{ngnBalance} <span className="text-xs text-gray-400">NGN</span>
+          </p>
+        )}
         <p className="text-[#EF4444] text-sm mb-6">{change}</p>
         <div className="flex justify-center gap-3">
           <Button

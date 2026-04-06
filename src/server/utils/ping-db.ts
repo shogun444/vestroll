@@ -1,5 +1,6 @@
 import { db } from "@/server/db";
 import { sql } from "drizzle-orm";
+import { Logger } from "../services/logger.service";
 
 /**
  * Pings the database to check connectivity.
@@ -10,7 +11,7 @@ export async function pingDb(): Promise<boolean> {
     await db.execute(sql`SELECT 1`);
     return true;
   } catch (error) {
-    console.error("Database ping failed:", error);
+    Logger.error("Database ping failed:", { error: String(error) });
     return false;
   }
 }
