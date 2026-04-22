@@ -11,7 +11,7 @@ import {
   bigint,
   jsonb,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 export const userStatusEnum = pgEnum("user_status", [
   "pending_verification",
@@ -408,7 +408,7 @@ export const organizationFiatBalances = pgTable("organization_fiat_balances", {
     .unique(),
   currency: varchar("currency", { length: 3 }).default("NGN").notNull(),
   /** Amount in kobo/cents to avoid floating point issues */
-  balance: bigint("balance", { mode: "bigint" }).default(0n).notNull(),
+  balance: bigint("balance", { mode: "bigint" }).default(sql`0`).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

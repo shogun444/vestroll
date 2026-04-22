@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: pnpm install && pnpm run build
-    startCommand: pnpm run db:migrate && pnpm run start
+    startCommand: pnpm drizzle-kit push && pnpm run start
     cacheDirectories:
       - .next/cache
       - node_modules

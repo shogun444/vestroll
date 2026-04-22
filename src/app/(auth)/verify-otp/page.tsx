@@ -1,25 +1,20 @@
 "use client";
+import { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import AuthLayer from "@/components/features/auth/AuthLayer";
 import OTPVerification from "@/components/shared/otpVerificationModal";
-import { useRouter } from "next/navigation";
 
-function VerifyOTPPage() {
+function VerifyOTPContent() {
   const router = useRouter();
-  const searchParams =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search)
-      : null;
-  const email = searchParams?.get("email") || "User";
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "User";
 
   const handleVerify = async (otp: string) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
     const isValid = otp === "123456";
-
     if (isValid) {
       router.push("/dashboard");
     }
-
     return isValid;
   };
 
@@ -40,6 +35,14 @@ function VerifyOTPPage() {
       onGoBack={handleGoBack}
       resendCooldown={60}
     />
+  );
+}
+
+function VerifyOTPPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyOTPContent />
+    </Suspense>
   );
 }
 
