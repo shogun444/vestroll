@@ -3,7 +3,7 @@ import { JWTService } from "@/server/services/jwt.service";
 
 /**
  * Global API Middleware
- * 
+ *
  * Handles cross-cutting concerns for all API requests:
  * 1. Request Tracing: Injects a unique `x-response-id` into request and response headers.
  * 2. CORS Handling: Validates the request origin against allowed origins and handles preflight OPTIONS requests.
@@ -17,6 +17,10 @@ export async function middleware(req: NextRequest) {
 
   const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(",") ?? [];
   const origin = req.headers.get("origin");
+
+  if (process.env.NODE_ENV === "development" && origin) {
+    allowedOrigins.push(origin);
+  }
 
   // Origin validation
   if (origin && !allowedOrigins.includes(origin)) {
@@ -77,4 +81,3 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: "/api/v1/:path*",
 };
-

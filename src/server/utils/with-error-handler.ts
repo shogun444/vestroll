@@ -26,8 +26,10 @@ export interface HandlerContext<T = any> {
  * @param handler - The actual logic for the route.
  */
 export function withHandler<T = any>(
-  options: { schema?: z.ZodSchema<T> } | ((req: NextRequest, ctx: any) => Promise<NextResponse>),
-  handler?: (req: NextRequest, ctx: HandlerContext<T>) => Promise<NextResponse>
+  options:
+    | { schema?: z.ZodSchema<T> }
+    | ((req: NextRequest, ctx: any) => Promise<NextResponse>),
+  handler?: (req: NextRequest, ctx: HandlerContext<T>) => Promise<NextResponse>,
 ) {
   // Overload: withHandler(async (req, ctx) => ...)
   if (typeof options === "function") {
@@ -39,6 +41,10 @@ export function withHandler<T = any>(
   return async (req: NextRequest, ctx: any): Promise<NextResponse> => {
     try {
       const instance = req?.nextUrl?.pathname ?? "unknown";
+      const method = req?.method ?? "UNKNOWN";
+
+      Logger.info(`[Request] ${method} ${instance}`);
+
       const metadata: RequestMetadata = {
         ipAddress: AuthUtils.getClientIp(req),
         userAgent: AuthUtils.getUserAgent(req),
@@ -52,14 +58,14 @@ export function withHandler<T = any>(
           if (!validated.success) {
             throw new ValidationError(
               "Invalid request body",
-              validated.error.flatten().fieldErrors as any
+              validated.error.flatten().fieldErrors as any,
             );
           }
           body = validated.data;
         } catch (e) {
           if (e instanceof ValidationError) throw e;
           if (e instanceof SyntaxError) {
-             throw new ValidationError("Invalid JSON in request body");
+            throw new ValidationError("Invalid JSON in request body");
           }
           throw new ValidationError("Failed to parse request body");
         }
@@ -69,24 +75,42 @@ export function withHandler<T = any>(
 
       const response = await handler!(req, { ...ctx, body, metadata });
       response.headers.set("X-Response-Id", responseId);
+
+      Logger.info(`[Success] ${method} ${instance}`, {
+        responseId,
+        status: response.status,
+      });
+
       return response;
     } catch (error) {
       const instance = req?.nextUrl?.pathname ?? "unknown";
+      const method = req?.method ?? "UNKNOWN";
+      const responseId = crypto.randomUUID();
 
       if (error instanceof AppError) {
-        return ApiResponse.problemDetails(
-          error.toProblemDetails(instance)
-        ) as NextResponse;
+        Logger.error(`[App Error] ${method} ${instance}`, {
+          responseId,
+          type: error.name,
+          message: error.message,
+          errors: error.errors,
+        });
+        const problem = error.toProblemDetails(instance);
+        const response = ApiResponse.problemDetails(problem) as NextResponse;
+        response.headers.set("X-Response-Id", responseId);
+        return response;
       }
 
-      const responseId = crypto.randomUUID();
-      Logger.error(`[Unhandled Error] ${instance}`, { error, responseId });
-      
+      Logger.error(`[Unhandled Error] ${method} ${instance}`, {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        responseId,
+      });
+
       const response = ApiResponse.error(
         "An unexpected error occurred. Please try again later.",
         500,
         null,
-        req
+        req,
       ) as NextResponse;
 
       response.headers.set("X-Response-Id", responseId);

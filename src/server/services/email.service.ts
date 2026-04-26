@@ -12,13 +12,43 @@ export class EmailService {
   private static readonly FROM_EMAIL = process.env.EMAIL_FROM || "noreply@vestroll.com";
   private static readonly APP_NAME = "VestRoll";
 
-  /**
-   * Sends a raw email using the configured external provider.
-   * 
-   * @param options - Recipient, subject, and HTML content.
-   */
   static async send(options: EmailOptions): Promise<void> {
-    // Implementation placeholder for external email provider (e.g., SendGrid, AWS SES)
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+      console.error("BREVO_API_KEY is not defined. Email will not be sent.");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "api-key": apiKey,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: {
+            name: process.env.EMAIL_FROM_NAME || this.APP_NAME,
+            email: this.FROM_EMAIL,
+          },
+          to: [
+            {
+              email: options.to,
+            },
+          ],
+          subject: options.subject,
+          htmlContent: options.html,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to send email via Brevo", response.status, errorData);
+      }
+    } catch (error) {
+      console.error("Exception while sending email via Brevo", error);
+    }
   }
 
   private static getBaseTemplate(content: string): string {

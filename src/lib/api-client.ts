@@ -25,19 +25,39 @@ export class RequestError extends Error {
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
-  const isJson = response.headers.get("content-type")?.includes("application/json");
-  const data = isJson ? await response.json() : null;
+  const contentType = response.headers.get("content-type") || "";
+  const isJson = contentType.includes("json");
+
+  let data: any = null;
+  let rawText = "";
+
+  if (isJson) {
+    try {
+      data = await response.json();
+    } catch (e) {
+      console.error("Failed to parse JSON response:", e);
+    }
+  } else {
+    try {
+      rawText = await response.text();
+    } catch (e) {}
+  }
 
   if (!response.ok) {
-    // If it's a Problem Details (RFC 7807) response, parse it correctly
-    if (data && (data.title || data.detail)) {
-      throw new RequestError(data as ApiError);
+    if (data) {
+      const errorDetail = data.detail || data.message || data.title || "An error occurred";
+      throw new RequestError({
+        title: data.title || response.statusText || "Error",
+        status: data.status || response.status,
+        detail: errorDetail,
+        errors: data.errors,
+      });
     }
     
     throw new RequestError({
       title: response.statusText || "Unknown Error",
       status: response.status,
-      detail: "An unexpected error occurred while communicating with the server.",
+      detail: rawText ? `Server Error: ${rawText.substring(0, 100)}` : "An unexpected error occurred while communicating with the server.",
     });
   }
 

@@ -14,10 +14,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  // @ts-ignore: NextConfig type in v16 might have changed or is experiencing a regression
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  allowedDevOrigins: ["10.199.228.216"],
   images: {
     remotePatterns: [
       {
