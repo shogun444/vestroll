@@ -5,7 +5,7 @@ import OnboardingCheckList from "@/components/features/dashboard/home/Onboarding
 import RequiringAttention from "@/components/features/dashboard/home/RequiringAttention";
 import QuickAction from "@/components/features/dashboard/home/QuickAction";
 import { motion, Variants } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KybService } from "@/lib/api/kyb";
 import type { KybVerificationStatus } from "@/types/kyb";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,9 +33,18 @@ const itemVariants: Variants = {
   },
 };
 
+// Terminal statuses that stop polling
+const TERMINAL_STATUSES: KybVerificationStatus["status"][] = [
+  "verified",
+  "approved",
+  "rejected",
+];
+
 export default function DashboardPage() {
   const [kybStatus, setKybStatus] = useState<KybVerificationStatus | null>(null);
-  const [isPolling, setIsPolling] = useState(false);
+  const pollingRef = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
   const user = {
     name: "Peter",
@@ -61,22 +70,41 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (kybStatus?.status === "pending" && !isPolling) {
-      setIsPolling(true);
-      const interval = setInterval(async () => {
-        const status = await fetchKybStatus();
-        if (status && (status.status === "verified" || status.status === "rejected")) {
-          setIsPolling(false);
-          clearInterval(interval);
-        }
-      }, 5000); // Poll every 5 seconds
+    // Start polling when status is pending
+    if (kybStatus?.status === "pending" && !pollingRef.current) {
+      pollingRef.current = true;
+      // Start first poll immediately, then schedule subsequent polls
+      const poll = async () => {
+        if (!pollingRef.current || !isMountedRef.current) return;
 
-      return () => {
-        clearInterval(interval);
-        setIsPolling(false);
+        const status = await fetchKybStatus();
+
+        // Continue polling only if status is still pending and component is mounted
+        if (status?.status === "pending" && pollingRef.current && isMountedRef.current) {
+          timeoutRef.current = setTimeout(poll, 5000);
+        } else if (status) {
+          // Terminal state reached - stop polling
+          pollingRef.current = false;
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
+        }
       };
+      poll();
     }
-  }, [kybStatus?.status, isPolling]);
+
+    // Cleanup on unmount or status change
+    return () => {
+      pollingRef.current = false;
+      isMountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - polling is controlled via refs
 
   const renderKybBanner = () => {
     if (!kybStatus || kybStatus.status === "not_started") return null;
@@ -93,6 +121,7 @@ export default function DashboardPage() {
           </Alert>
         );
       case "verified":
+      case "approved":
         return (
           <Alert className="mb-4 border-green-500 bg-green-50 dark:bg-green-950">
             <CheckCircle className="h-4 w-4 text-green-600" />
