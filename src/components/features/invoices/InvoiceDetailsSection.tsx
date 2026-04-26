@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCurrency } from "@/utils/formatters";
 import { Invoice } from "@/lib/data/invoices";
 import Image from "next/image";
 
@@ -142,12 +143,14 @@ export default function InvoiceDetailsSection({ invoice }: Props) {
           <div className="grid grid-cols-2 bg-[#F5F6F7] text-[#5D6B82] text-[13px] px-3 py-3 font-medium rounded-md">
             <p>Item Name</p>
             <p className="text-right text-gray-900 font-medium">
-              ${subtotal.toFixed(2)}
+              {formatCurrency(subtotal, { currency: invoice.paidIn, isKobo: false })}
             </p>
           </div>
           <div className="grid grid-cols-2 px-3 pt-2 text-[#5D6B82] text-xs">
             <span />
-            <p className="text-right">100 unit(s) at $5</p>
+            <p className="text-right">
+              100 unit(s) at {formatCurrency(5, { currency: invoice.paidIn, isKobo: false })}
+            </p>
           </div>
         </div>
 
@@ -156,7 +159,7 @@ export default function InvoiceDetailsSection({ invoice }: Props) {
           <div className="grid grid-cols-2 bg-[#F5F6F7] text-[#5D6B82] text-[13px] px-3 py-3 font-medium rounded-md">
             <p>Subtotal</p>
             <p className="text-right text-gray-900 font-medium">
-              ${subtotal.toFixed(2)}
+              {formatCurrency(subtotal, { currency: invoice.paidIn, isKobo: false })}
             </p>
           </div>
         </div>
@@ -166,7 +169,7 @@ export default function InvoiceDetailsSection({ invoice }: Props) {
           <div className="grid grid-cols-2 bg-white text-[#5D6B82] text-[13px] px-3 py-3 font-medium rounded-md">
             <p>VAT ({Math.round(vatRate * 100)}%)</p>
             <p className="text-right text-gray-900 font-medium">
-              ${vat.toFixed(2)}
+              {formatCurrency(vat, { currency: invoice.paidIn, isKobo: false })}
             </p>
           </div>
         </div>
@@ -175,7 +178,9 @@ export default function InvoiceDetailsSection({ invoice }: Props) {
         <div>
           <div className="grid grid-cols-2 bg-[#F5F6F7] text-gray-900 text-sm sm:text-base font-semibold px-3 py-3 rounded-md">
             <p>Total Amount</p>
-            <p className="text-right">${total.toFixed(2)}</p>
+            <p className="text-right">
+              {formatCurrency(total, { currency: invoice.paidIn, isKobo: false })}
+            </p>
           </div>
         </div>
       </div>
