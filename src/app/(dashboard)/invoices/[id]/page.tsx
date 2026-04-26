@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { mockInvoices } from "@/lib/data/invoices";
 import InvoiceHeader from "@/components/features/invoices/InvoiceHeader";
 import InvoiceSummary from "@/components/features/invoices/InvoiceSummary";
+import { formatCurrency } from "@/utils/formatters";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,10 +21,10 @@ export default function InvoiceDetailPage() {
   };
 
   const rate = RATE_MAP[invoice.paidIn] ?? 1;
-  const convertedValue = (invoice.amount * rate).toLocaleString("en-US", {
-    style: "currency",
+  const convertedValue = formatCurrency(invoice.amount * rate, {
     currency: "USD",
-    maximumFractionDigits: 2,
+    locale: "en-US",
+    isKobo: false,
   });
 
   return (

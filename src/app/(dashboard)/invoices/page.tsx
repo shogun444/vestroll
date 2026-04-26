@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { RoutePaths } from "@/routes/routesPath";
 import { UsdtIcon } from "@/../public/svg";
 import TitleHeader from "@/components/features/dashboard/TitleHeader";
+import { formatCurrency } from "@/utils/formatters";
 
 import { mockInvoices, Invoice } from "@/lib/data/invoices";
 
@@ -67,7 +68,7 @@ const Invoices: React.FC = () => {
       case "amount":
         return (
           <div className="text-text-header font-semibold dark:text-white">
-            {item.amount.toLocaleString()}.00
+            {formatCurrency(item.amount, { currency: item.paidIn, isKobo: false })}
           </div>
         );
       case "paidIn":
@@ -111,7 +112,7 @@ const Invoices: React.FC = () => {
         </p>
         <span className="flex items-center gap-2 ">
           <p className="text-xs font-medium text-gray-300 dark:text-gray-500">
-            {item.amount}
+            {formatCurrency(item.amount, { currency: item.paidIn, isKobo: false })}
           </p>
           <div className="w-px self-stretch bg-gray-150 dark:bg-gray-700" />
           <div className="flex items-center font-medium gap-1 ">

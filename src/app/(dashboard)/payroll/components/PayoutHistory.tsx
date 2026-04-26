@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UsdtIcon } from '@/../public/svg';
 import { RoutePaths } from '@/routes/routesPath';
+import { formatCurrency } from '@/utils/formatters';
 
 interface Invoice {
   id: string;
@@ -81,7 +82,7 @@ function getCurrencyPrefix(currency: string): string {
 }
 
 function formatAmount(amount: number, currency: string): string {
-  return `${getCurrencyPrefix(currency)}${amount.toLocaleString()}.00`;
+  return formatCurrency(amount, { currency, isKobo: false });
 }
 
 function formatRate(title: string, currency: string): string {

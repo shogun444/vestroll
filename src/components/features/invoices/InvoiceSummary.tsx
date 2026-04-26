@@ -5,6 +5,7 @@ import BilledSection from "./BilledSection";
 import InvoiceDetailsSection from "./InvoiceDetailsSection";
 import { Invoice } from "@/lib/data/invoices";
 import InvoiceFooterSection from "./InvoiceFooterSection";
+import { formatCurrency } from "@/utils/formatters";
 
 interface InvoiceSummaryProps {
   id: string;
@@ -23,6 +24,8 @@ export default function InvoiceSummary({
   iconSrc = "/invoice-summary-icon.png",
   invoice,
 }: InvoiceSummaryProps) {
+  const formattedAmount = formatCurrency(amount, { currency, isKobo: false });
+
   return (
     <section className="max-w-[852px] mx-auto px-4 sm:px-6 md:px-0 space-y-3 sm:space-y-5">
       {/* Summary Card */}
@@ -37,7 +40,7 @@ export default function InvoiceSummary({
         />
 
         <h2 className="mt-3 text-[20px] sm:text-[22px] font-semibold text-[#17171C]">
-          {amount} {currency}
+          {formattedAmount}
         </h2>
 
         <p className="mt-2 text-[15px] sm:text-[16px] text-[#5D6B82]">

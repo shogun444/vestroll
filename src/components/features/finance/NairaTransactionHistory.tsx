@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Clock, Loader2 } from "lucide-react";
+import { formatCurrencyFromKobo } from "@/utils/formatters";
 
 interface FiatTransaction {
   id: string;
@@ -23,7 +24,7 @@ const MOCK_FIAT_TXS: FiatTransaction[] = [
 ];
 
 function formatNgn(kobo: number): string {
-  return `₦${(kobo / 100).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+  return formatCurrencyFromKobo(kobo, { currency: "NGN" });
 }
 
 function statusBadge(status: FiatTransaction["status"]) {
