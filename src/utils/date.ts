@@ -11,13 +11,17 @@ export function formatDate(dateInput: string | Date | null | undefined): string 
     const date = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
     
     if (!isValid(date)) {
-      console.warn(`Invalid date provided: ${dateInput}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Invalid date provided: ${dateInput}`);
+      }
       return "";
     }
     
     return format(date, "MMM dd, yyyy");
   } catch (error) {
-    console.warn(`Error formatting date: ${dateInput}`, error);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Error formatting date: ${dateInput}`, error);
+    }
     return "";
   }
 }
@@ -33,13 +37,17 @@ export function formatDateTime(dateInput: string | Date | null | undefined): str
     const date = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
     
     if (!isValid(date)) {
-      console.warn(`Invalid date provided: ${dateInput}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Invalid date provided: ${dateInput}`);
+      }
       return "";
     }
     
     return format(date, "MMM dd, yyyy HH:mm");
   } catch (error) {
-    console.warn(`Error formatting date: ${dateInput}`, error);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Error formatting date: ${dateInput}`, error);
+    }
     return "";
   }
 }
@@ -71,13 +79,17 @@ export function formatRelativeDate(dateInput: string | Date | null | undefined):
     const date = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
     
     if (!isValid(date)) {
-      console.warn(`Invalid date provided: ${dateInput}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Invalid date provided: ${dateInput}`);
+      }
       return "";
     }
     
     return formatDistanceToNow(date, { addSuffix: true });
   } catch (error) {
-    console.warn(`Error formatting date: ${dateInput}`, error);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Error formatting date: ${dateInput}`, error);
+    }
     return "";
   }
 }
@@ -96,13 +108,17 @@ export function formatDateCustom(
     const date = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
     
     if (!isValid(date)) {
-      console.warn(`Invalid date provided: ${dateInput}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Invalid date provided: ${dateInput}`);
+      }
       return "";
     }
     
     return format(date, formatStr);
   } catch (error) {
-    console.warn(`Error formatting date: ${dateInput}`, error);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Error formatting date: ${dateInput}`, error);
+    }
     return "";
   }
 }
@@ -121,7 +137,9 @@ export function formatDateLocale(
     const date = typeof dateInput === "string" ? parseISO(dateInput) : dateInput;
     
     if (!isValid(date)) {
-      console.warn(`Invalid date provided: ${dateInput}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Invalid date provided: ${dateInput}`);
+      }
       return "";
     }
     
@@ -131,7 +149,9 @@ export function formatDateLocale(
       year: "numeric",
     });
   } catch (error) {
-    console.warn(`Error formatting date: ${dateInput}`, error);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Error formatting date: ${dateInput}`, error);
+    }
     return "";
   }
 }
