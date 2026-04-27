@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { TimeOffFormData, Employee } from "@/types/teamManagement.types";
 import { SelectEmployeeModal } from "./SelectEmployeeModal";
+import { useToast } from "@/hooks/useToast";
 
 const EmployeeSelector = ({
   selectedEmployee,
@@ -310,6 +311,7 @@ const DurationDisplay = ({ days }: { days: number }) => (
 );
 
 export const CreateTimeOffForm = ({ employees }: { employees: Employee[] }) => {
+  const { success } = useToast();
   const [formData, setFormData] = useState<TimeOffFormData>({
     employee: null,
     timeOffType: "paid",
@@ -347,7 +349,7 @@ export const CreateTimeOffForm = ({ employees }: { employees: Employee[] }) => {
 
   const handleSubmit = () => {
     console.log("Form submitted:", formData);
-    alert("Time off request created successfully!");
+    success("Time off request created successfully!");
   };
 
   return (
