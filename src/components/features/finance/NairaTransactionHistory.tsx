@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Clock, Loader2 } from "lucide-react";
-import { formatDate } from "@/utils/date";
+import { formatDate } from "@/utils/date"
 
 interface FiatTransaction {
   id: string;
@@ -72,7 +72,8 @@ const MOCK_FIAT_TXS: FiatTransaction[] = [
 ]; 
 
 function formatNgn(kobo: number): string {
-  return `₦${(kobo / 100).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+  return 
+    (kobo, { currency: "NGN" });
 }
 
 function statusBadge(status: FiatTransaction["status"]) {
