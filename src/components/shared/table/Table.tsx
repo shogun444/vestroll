@@ -26,6 +26,11 @@ interface TableProps<T = any> {
   itemsPerPage?: number;
   showResultsPerPage?: boolean;
   resultsPerPageOptions?: number[];
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
 
   // Selection functionality
   selectedItems?: string[];
@@ -63,6 +68,11 @@ const Table = <T extends Record<string, any>>({
   itemsPerPage: initialItemsPerPage = 10,
   showResultsPerPage = false,
   resultsPerPageOptions = [10, 25, 50, 100],
+  currentPage: controlledCurrentPage,
+  totalPages: controlledTotalPages,
+  totalItems,
+  onPageChange,
+  onItemsPerPageChange,
   selectedItems = [],
   onSelectItem,
   onSelectAll,
@@ -77,19 +87,27 @@ const Table = <T extends Record<string, any>>({
 }: TableProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
+  const isPaginationControlled =
+    controlledCurrentPage !== undefined &&
+    controlledTotalPages !== undefined &&
+    totalItems !== undefined &&
+    onPageChange !== undefined;
+  const activeCurrentPage = controlledCurrentPage ?? currentPage;
+  const activeTotalPages =
+    controlledTotalPages ?? Math.ceil(data.length / itemsPerPage);
+  const activeTotalItems = totalItems ?? data.length;
 
   // Calculate pagination values
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
+    onItemsPerPageChange?.(newItemsPerPage);
   };
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const startIndex = (activeCurrentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = useMemo(
-    () => data.slice(startIndex, endIndex),
-    [data, startIndex, endIndex],
+    () => (isPaginationControlled ? data : data.slice(startIndex, endIndex)),
+    [data, endIndex, isPaginationControlled, startIndex],
   );
 
   const allSelected =
@@ -104,6 +122,7 @@ const Table = <T extends Record<string, any>>({
     data.length > 0 && selectedItems.length === data.length;
 
   const handlePageChange = (page: number) => {
+    onPageChange?.(page);
     setCurrentPage(page);
   };
 
@@ -178,13 +197,13 @@ const Table = <T extends Record<string, any>>({
         />
       </div>
 
-      {showPagination && totalPages > 1 && (
+      {showPagination && activeTotalPages > 1 && (
         <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
+          currentPage={activeCurrentPage}
+          totalPages={activeTotalPages}
           onPageChange={handlePageChange}
           itemsPerPage={itemsPerPage}
-          totalItems={data.length}
+          totalItems={activeTotalItems}
           showInfo={true}
           showResultsPerPage={showResultsPerPage}
           onItemsPerPageChange={handleItemsPerPageChange}
