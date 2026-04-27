@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { currencies } from "@/constants";
+import { formatDateRange } from "@/utils/date";
 
 interface Contract {
   id: string;
@@ -135,7 +136,7 @@ export default function ContractGrid() {
                 height={20}
               />
               <span className="text-xs sm:text-sm">
-                {contract.startDate} - {contract.endDate}
+                {formatDateRange(contract.startDate, contract.endDate)}
               </span>
             </div>
 

@@ -3,6 +3,7 @@
 import { formatCurrency } from "@/utils/formatters";
 import { Invoice } from "@/lib/data/invoices";
 import Image from "next/image";
+import { formatDateCustom } from "@/utils/date";
 
 // helpers
 function calculateDueDate(issueDate: string): string {
@@ -10,11 +11,7 @@ function calculateDueDate(issueDate: string): string {
   if (isNaN(parsed)) return "N/A";
   const due = new Date(parsed);
   due.setDate(due.getDate() + 14);
-  return due.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return formatDateCustom(due, "d MMMM yyyy");
 }
 
 function calcBreakdown(amount: number) {

@@ -9,6 +9,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { cn } from "@/utils/classNames";
 import FilterModal, { FilterSelection } from "./ui/FilterModal";
 import Link from "next/link";
+import { formatDateRange } from "@/utils/date";
 
 const getStatusClass = (status: Contract["status"]) => {
   switch (status) {
@@ -44,7 +45,7 @@ const ContractHistoryCard = (contract: Contract) => {
         <div className="flex gap-2">
           <Image src={"/calander.svg"} alt="icon" width={14} height={14} />
           <small className="text-gray-400">
-            {contract.period.startDate} - {contract.period.endDate}
+            {formatDateRange(contract.period.startDate, contract.period.endDate)}
           </small>
         </div>
         <hr className="my-4 text-border-primary dark:border-gray-800" />

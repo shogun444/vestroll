@@ -18,6 +18,7 @@ import { SearchFilterBar } from "@/components/features/team-management/SearchFil
 import { Pagination } from "@/components/features/team-management/Pagination";
 import { FilterModal } from "@/components/features/team-management/FilterModal";
 import { useSort } from "@/hooks/use-sort";
+import { formatDate } from "@/utils/date";
 import Image from "next/image";
 
 function TeamMgtMilestone() {
@@ -251,11 +252,11 @@ function TeamMgtMilestone() {
                         </div>
                         {/* mobile view */}
                         <small className="md:hidden text-xs text-[#414F62]">
-                          {milestone.submittedAt}
+                          {formatDate(milestone.submittedAt)}
                         </small>
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
-                        {milestone.submittedAt}
+                        {formatDate(milestone.submittedAt)}
                       </td>
                     </tr>
                   ))}
