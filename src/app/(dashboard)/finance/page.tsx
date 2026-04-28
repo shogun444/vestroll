@@ -1,16 +1,14 @@
 "use client";
 import { motion } from "framer-motion";
 
-import { useState } from "react";
-import { MOCK_ASSETS, generateMockTransactions } from "@/lib/mock-data";
+import { useEffect, useMemo, useState } from "react";
+import { MOCK_ASSETS } from "@/lib/mock-data";
 import { BalanceSection } from "@/components/features/finance/balance-section";
 import { AssetsGrid } from "@/components/features/finance/assets-grid";
 import Table from "@/components/shared/table/Table";
 import { TableColumn } from "@/components/shared/table/TableHeader";
-import { Transaction } from "@/types/finance.types";
+import type { Transaction } from "@/types/finance.types";
 import { UsdtIcon } from "@/../public/svg";
-
-const mockTransactions = generateMockTransactions(80);
 
 const transactionColumns: TableColumn[] = [
   { key: "id", header: "Transaction ID" },
@@ -21,30 +19,177 @@ const transactionColumns: TableColumn[] = [
   { key: "timestamp", header: "Timestamp", align: "right" },
 ];
 
+type ApiTransactionStatus =
+  | "pending"
+  | "completed"
+  | "successful"
+  | "failed"
+  | "Pending"
+  | "Successful"
+  | "Failed";
+
+type ApiTransaction = Omit<Transaction, "status"> & {
+  status: ApiTransactionStatus;
+};
+
+type TransactionsResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    data: ApiTransaction[];
+    meta: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+};
+
+type DisplayTransaction = Omit<Transaction, "status"> & {
+  status: "Pending" | "Completed" | "Failed";
+};
+
+const formatStatus = (
+  status: ApiTransactionStatus,
+): DisplayTransaction["status"] => {
+  switch (status) {
+    case "completed":
+    case "successful":
+    case "Successful":
+      return "Completed";
+    case "failed":
+    case "Failed":
+      return "Failed";
+    case "pending":
+    case "Pending":
+    default:
+      return "Pending";
+  }
+};
+
+const formatTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
+const normalizeTransaction = (
+  transaction: ApiTransaction,
+): DisplayTransaction => ({
+  ...transaction,
+  asset: transaction.asset ?? "NGN",
+  description:
+    transaction.description ??
+    `${
+      transaction.type
+        ? `${transaction.type[0].toUpperCase()}${transaction.type.slice(1)}`
+        : "Transaction"
+    } ${transaction.id}`,
+  status: formatStatus(transaction.status),
+  timestamp: formatTimestamp(transaction.timestamp),
+});
+
 export default function FinancePage() {
   const [search, setSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-
-  const filteredTransactions = mockTransactions.filter((tx) =>
-    [tx.id, tx.description, tx.amount, tx.status]
-      .filter(Boolean)
-      .some((v) => String(v).toLowerCase().includes(search.toLowerCase())),
+  const [transactions, setTransactions] = useState<DisplayTransaction[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [transactionsError, setTransactionsError] = useState<string | null>(
+    null,
   );
 
-  const getStatusBadge = (status: Transaction["status"]) => {
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchTransactions = async () => {
+      setIsLoadingTransactions(true);
+      setTransactionsError(null);
+      setTransactions([]);
+
+      try {
+        const params = new URLSearchParams({
+          page: String(currentPage),
+          limit: String(itemsPerPage),
+        });
+        const response = await fetch(
+          `/api/v1/finance/transactions?${params.toString()}`,
+          { signal: controller.signal },
+        );
+        const payload = (await response.json()) as TransactionsResponse;
+
+        if (!response.ok || !payload.success || !payload.data) {
+          throw new Error(payload.message || "Unable to load transactions");
+        }
+
+        setTransactions(payload.data.data.map(normalizeTransaction));
+        setTotalItems(payload.data.meta.total);
+        setTotalPages(Math.max(payload.data.meta.totalPages, 1));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setTransactions([]);
+        setTotalItems(0);
+        setTotalPages(1);
+        setTransactionsError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load transactions",
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingTransactions(false);
+        }
+      }
+    };
+
+    fetchTransactions();
+
+    return () => controller.abort();
+  }, [currentPage, itemsPerPage]);
+
+  const filteredTransactions = useMemo(
+    () =>
+      transactions.filter((tx) =>
+        [tx.id, tx.description, tx.amount, tx.status, tx.type, tx.asset]
+          .filter(Boolean)
+          .some((v) =>
+            String(v).toLowerCase().includes(search.toLowerCase()),
+          ),
+      ),
+    [search, transactions],
+  );
+
+  const getStatusBadge = (status: DisplayTransaction["status"]) => {
     switch (status) {
       case "Pending":
         return "border-[#E79A23] bg-[#FEF7EB] text-[#E79A23]";
       case "Failed":
         return "border-[#C64242] bg-[#FEECEC] text-[#C64242]";
-      case "Successful":
+      case "Completed":
         return "border-[#26902B] bg-[#EDFEEC] text-[#26902B]";
       default:
         return "";
     }
   };
 
-  const renderTransactionCell = (item: Transaction, column: TableColumn) => {
+  const renderTransactionCell = (
+    item: DisplayTransaction,
+    column: TableColumn,
+  ) => {
     switch (column.key) {
       case "id":
         return (
@@ -88,11 +233,14 @@ export default function FinancePage() {
           </span>
         );
       default:
-        return (item[column.key as keyof Transaction] as React.ReactNode) || "-";
+        return (
+          (item[column.key as keyof DisplayTransaction] as React.ReactNode) ||
+          "-"
+        );
     }
   };
 
-  const renderMobileCell = (item: Transaction) => (
+  const renderMobileCell = (item: DisplayTransaction) => (
     <div className="flex gap-4 justify-between">
       <div className="space-y-2 flex-1 min-w-0">
         <p className="truncate font-semibold text-gray-500 dark:text-gray-400">
@@ -129,8 +277,19 @@ export default function FinancePage() {
 
   const handleSelectAll = (checked: boolean) =>
     setSelectedItems(
-      checked ? filteredTransactions.map((_, i) => String(i)) : [],
+      checked ? filteredTransactions.map((transaction) => transaction.id) : [],
     );
+
+  const handlePageChange = (page: number) => {
+    setSelectedItems([]);
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setSelectedItems([]);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   const showModal = () => console.log("Show filter modal");
 
@@ -188,15 +347,30 @@ export default function FinancePage() {
               renderCell={renderTransactionCell}
               renderMobileCell={renderMobileCell}
               showPagination={true}
-              itemsPerPage={10}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
               showResultsPerPage={true}
               emptyTitle={
-                search ? "No transactions found" : "No transactions yet"
+                transactionsError
+                  ? "Unable to load transactions"
+                  : isLoadingTransactions
+                    ? "Loading transactions..."
+                    : search
+                      ? "No transactions found"
+                      : "No transactions yet"
               }
               emptyDescription={
-                search
-                  ? `No transactions match "${search}". Try adjusting your search.`
-                  : "Your transactions will appear here"
+                transactionsError
+                  ? transactionsError
+                  : isLoadingTransactions
+                    ? "Fetching recent deposits and withdrawals."
+                    : search
+                      ? `No transactions match "${search}". Try adjusting your search.`
+                      : "Your transactions will appear here"
               }
               getItemId={(item) => item.id}
             />
