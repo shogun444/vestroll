@@ -1,9 +1,32 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db, employees, timeOffRequests, users } from "../db";
-import { ForbiddenError, NotFoundError } from "../utils/errors";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../utils/errors";
 import { hasAdminOrManagerRole } from "../utils/role";
 import { EmailService } from "./email.service";
 import { Logger } from "./logger.service";
+
+interface CreateTimeOffInput {
+  /** Authenticated user's ID (used to look up their employee record) */
+  userId: string;
+  /** Override: admin submitting on behalf of a specific employee */
+  employeeId?: string;
+  type: "paid" | "unpaid";
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  reason: string;
+}
+
+export interface CreateTimeOffResult {
+  id: string;
+  employeeId: string;
+  organizationId: string;
+  type: string;
+  startDate: Date;
+  endDate: Date;
+  totalDuration: number;
+  status: string;
+  submittedAt: Date | null;
+}
 
 interface UpdateTimeOffStatusInput {
   requestId: string;
@@ -139,6 +162,108 @@ export class TimeOffService {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
+  static async createTimeOffRequest(
+    input: CreateTimeOffInput,
+  ): Promise<CreateTimeOffResult> {
+    // 1. Resolve the actor's organisation
+    const [user] = await db
+      .select({ organizationId: users.organizationId })
+      .from(users)
+      .where(eq(users.id, input.userId))
+      .limit(1);
+
+    if (!user?.organizationId) {
+      throw new ForbiddenError("User is not associated with any organization");
+    }
+
+    // 2. Resolve the employee record
+    let resolvedEmployeeId: string;
+
+    if (input.employeeId) {
+      // Admin specified an explicit employee — verify they belong to the same org
+      const [emp] = await db
+        .select({ id: employees.id })
+        .from(employees)
+        .where(
+          and(
+            eq(employees.id, input.employeeId),
+            eq(employees.organizationId, user.organizationId),
+          ),
+        )
+        .limit(1);
+
+      if (!emp) {
+        throw new NotFoundError(
+          "Employee not found within your organization",
+        );
+      }
+      resolvedEmployeeId = emp.id;
+    } else {
+      // Self-submission: look up employee by userId
+      const [emp] = await db
+        .select({ id: employees.id })
+        .from(employees)
+        .where(
+          and(
+            eq(employees.userId, input.userId),
+            eq(employees.organizationId, user.organizationId),
+          ),
+        )
+        .limit(1);
+
+      if (!emp) {
+        throw new NotFoundError(
+          "No employee record found for this user. Please contact your administrator.",
+        );
+      }
+      resolvedEmployeeId = emp.id;
+    }
+
+    // 3. Validate dates
+    const start = new Date(input.startDate);
+    const end = new Date(input.endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestError("Invalid date format. Use YYYY-MM-DD.");
+    }
+
+    if (end < start) {
+      throw new BadRequestError("endDate must be on or after startDate");
+    }
+
+    // Inclusive day count
+    const totalDuration =
+      Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    // 4. Insert
+    const [created] = await db
+      .insert(timeOffRequests)
+      .values({
+        organizationId: user.organizationId,
+        employeeId: resolvedEmployeeId,
+        type: input.type,
+        startDate: start,
+        endDate: end,
+        reason: input.reason,
+        totalDuration,
+        status: "pending",
+        submittedAt: new Date(),
+      })
+      .returning({
+        id: timeOffRequests.id,
+        employeeId: timeOffRequests.employeeId,
+        organizationId: timeOffRequests.organizationId,
+        type: timeOffRequests.type,
+        startDate: timeOffRequests.startDate,
+        endDate: timeOffRequests.endDate,
+        totalDuration: timeOffRequests.totalDuration,
+        status: timeOffRequests.status,
+        submittedAt: timeOffRequests.submittedAt,
+      });
+
+    return created;
+  }
+
   static async getTimeOffRequests(userId: string) {
     const [user] = await db
       .select({ organizationId: users.organizationId })
