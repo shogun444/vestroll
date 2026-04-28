@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Clock, Loader2 } from "lucide-react";
+import { formatDate } from "@/utils/date"
 
 interface FiatTransaction {
   id: string;
@@ -14,16 +15,65 @@ interface FiatTransaction {
 }
 
 const MOCK_FIAT_TXS: FiatTransaction[] = [
-  { id: "ft-1", type: "deposit", amount: 500_000_00, status: "completed", provider: "monnify", providerReference: "MFY_20251001_001", createdAt: "2025-10-25T14:00:00Z" },
-  { id: "ft-2", type: "payout", amount: 120_000_00, status: "completed", provider: "monnify", providerReference: "MFY_20251002_002", createdAt: "2025-10-24T09:00:00Z" },
-  { id: "ft-3", type: "deposit", amount: 1_000_000_00, status: "pending", provider: "flutterwave", providerReference: "FLW_20251003_003", createdAt: "2025-10-23T11:30:00Z" },
-  { id: "ft-4", type: "withdrawal", amount: 250_000_00, status: "failed", provider: "monnify", providerReference: "MFY_20251004_004", createdAt: "2025-10-22T16:45:00Z" },
-  { id: "ft-5", type: "payout", amount: 80_000_00, status: "completed", provider: "flutterwave", providerReference: "FLW_20251005_005", createdAt: "2025-10-21T10:00:00Z" },
-  { id: "ft-6", type: "deposit", amount: 2_500_000_00, status: "completed", provider: "monnify", providerReference: "MFY_20251006_006", createdAt: "2025-10-20T08:15:00Z" },
-];
+  {
+    id: "ft-1",
+    type: "deposit",
+    amount: 500_000_00,
+    status: "completed",
+    provider: "monnify",
+    providerReference: "MFY_20251001_001",
+    createdAt: "2025-10-25T14:00:00Z",
+  },
+  {
+    id: "ft-2",
+    type: "payout",
+    amount: 120_000_00,
+    status: "completed",
+    provider: "monnify",
+    providerReference: "MFY_20251002_002",
+    createdAt: "2025-10-24T09:00:00Z",
+  },
+  {
+    id: "ft-3",
+    type: "deposit",
+    amount: 1_000_000_00,
+    status: "pending",
+    provider: "flutterwave",
+    providerReference: "FLW_20251003_003",
+    createdAt: "2025-10-23T11:30:00Z",
+  },
+  {
+    id: "ft-4",
+    type: "withdrawal",
+    amount: 250_000_00,
+    status: "failed",
+    provider: "monnify",
+    providerReference: "MFY_20251004_004",
+    createdAt: "2025-10-22T16:45:00Z",
+  },
+  {
+    id: "ft-5",
+    type: "payout",
+    amount: 80_000_00,
+    status: "completed",
+    provider: "flutterwave",
+    providerReference: "FLW_20251005_005",
+    createdAt: "2025-10-21T10:00:00Z",
+  },
+  {
+    id: "ft-6",
+    type: "deposit",
+    amount: 2_500_000_00,
+    status: "completed",
+    provider: "monnify",
+    providerReference: "MFY_20251006_006",
+    createdAt: "2025-10-20T08:15:00Z",
+  },
+]; 
 
 function formatNgn(kobo: number): string {
-  return `₦${(kobo / 100).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+  return 
+    (kobo, { currency: "NGN" });
 }
 
 function statusBadge(status: FiatTransaction["status"]) {
@@ -33,15 +83,19 @@ function statusBadge(status: FiatTransaction["status"]) {
     failed: "bg-rose-50 text-rose-700 border-rose-200",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${map[status]}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${map[status]}`}
+    >
       {status}
     </span>
   );
 }
 
 function typeIcon(type: FiatTransaction["type"]) {
-  if (type === "deposit") return <ArrowDownLeft className="h-4 w-4 text-emerald-600" />;
-  if (type === "payout") return <ArrowUpRight className="h-4 w-4 text-blue-600" />;
+  if (type === "deposit")
+    return <ArrowDownLeft className="h-4 w-4 text-emerald-600" />;
+  if (type === "payout")
+    return <ArrowUpRight className="h-4 w-4 text-blue-600" />;
   return <ArrowUpRight className="h-4 w-4 text-orange-600" />;
 }
 
@@ -95,21 +149,25 @@ export default function NairaTransactionHistory() {
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
                   {typeIcon(tx.type)}
-                  <span className="capitalize font-medium text-gray-800">{tx.type}</span>
+                  <span className="capitalize font-medium text-gray-800">
+                    {tx.type}
+                  </span>
                 </div>
               </td>
-              <td className="px-4 py-3 font-semibold text-gray-900">{formatNgn(tx.amount)}</td>
+              <td className="px-4 py-3 font-semibold text-gray-900">
+                {formatNgn(tx.amount)}
+              </td>
               <td className="px-4 py-3">
                 <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 capitalize">
                   {tx.provider}
                 </span>
               </td>
-              <td className="px-4 py-3 font-mono text-xs text-gray-500">{tx.providerReference}</td>
+              <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                {tx.providerReference}
+              </td>
               <td className="px-4 py-3">{statusBadge(tx.status)}</td>
               <td className="px-4 py-3 text-gray-500 text-xs">
-                {new Date(tx.createdAt).toLocaleDateString("en-NG", {
-                  day: "numeric", month: "short", year: "numeric",
-                })}
+                {formatDate(tx.createdAt)}
               </td>
             </tr>
           ))}

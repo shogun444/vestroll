@@ -16,6 +16,7 @@ import { Pagination } from "@/components/features/team-management/Pagination";
 import { FilterModal } from "@/components/features/team-management/FilterModal";
 import { useSort } from "@/hooks/use-sort";
 import Image from "next/image";
+import { formatDate } from "@/utils/date";
 
 function TeamMgtExpense() {
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
@@ -207,9 +208,9 @@ function TeamMgtExpense() {
                       <span className="text-xs">{getStatusText(expense.status)}</span>
                     </div>
                     {/* mobile view */}
-                    <small className="md:hidden text-xs text-[#414F62]">{expense.submittedAt}</small>
+                    <small className="md:hidden text-xs text-[#414F62]">{formatDate(expense.submittedAt)}</small>
                   </td>
-                  <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">{expense.submittedAt}</td>
+                  <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">{formatDate(expense.submittedAt)}</td>
                 </tr>
                 ))}
               </tbody>

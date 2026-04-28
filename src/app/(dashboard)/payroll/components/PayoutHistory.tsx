@@ -1,4 +1,12 @@
-"use client";
+
+'use client';
+import Table from '@/components/shared/table/Table';
+import { TableColumn } from '@/components/shared/table/TableHeader';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { UsdtIcon } from '@/../public/svg';
+import { RoutePaths } from '@/routes/routesPath';
+import { formatCurrency } from '@/utils/formatters';
 
 import Table from "@/components/shared/table/Table";
 import { TableColumn } from "@/components/shared/table/TableHeader";
@@ -115,6 +123,21 @@ const columns: TableColumn[] = [
   { key: "paidIn", header: "Paid in", align: "center" },
   { key: "timestamp", header: "Timestamp", align: "right" },
 ];
+function formatAmount(amount: number, currency: string): string {
+  return formatCurrency(amount, { currency, isKobo: false });
+}
+
+function formatRate(title: string, currency: string): string {
+  if (title.includes('[CUR]')) {
+    return title.replace('[CUR]', getCurrencyPrefix(currency));
+  }
+
+  if (!title.startsWith('$')) {
+    return title;
+  }
+
+  return `${getCurrencyPrefix(currency)}${title.slice(1)}`;
+}
 
 const SkeletonRow = () => (
   <div className="flex items-center px-4 py-4 border-b border-gray-100 animate-pulse">

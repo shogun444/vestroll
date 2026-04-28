@@ -18,6 +18,7 @@ import { SearchFilterBar } from "@/components/features/team-management/SearchFil
 import { Pagination } from "@/components/features/team-management/Pagination";
 import { FilterModal } from "@/components/features/team-management/FilterModal";
 import { useSort } from "@/hooks/use-sort";
+import { formatDate } from "@/utils/date";
 import Image from "next/image";
 
 function TeamMgtTimeSheet() {
@@ -242,11 +243,11 @@ function TeamMgtTimeSheet() {
                         </div>
                         {/* mobile view */}
                         <small className="md:hidden text-xs text-[#414F62]">
-                          {timesheet.submittedAt}
+                          {formatDate(timesheet.submittedAt)}
                         </small>
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
-                        {timesheet.submittedAt}
+                        {formatDate(timesheet.submittedAt)}
                       </td>
                     </tr>
                   ))}
@@ -291,7 +292,7 @@ function TeamMgtTimeSheet() {
     header: {
       icon: <Clock2Icon size={24} />,
       title: (m) => m.employeeName,
-      subtitle: (m) => `${m.submittedAt} - ${new Date().toLocaleDateString()}`,
+      subtitle: (m) => `${formatDate(m.submittedAt)} - ${formatDate(new Date())}`,
     },
 
     summary: {

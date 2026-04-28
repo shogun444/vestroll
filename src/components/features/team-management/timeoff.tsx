@@ -15,6 +15,7 @@ import { Pagination } from "@/components/features/team-management/Pagination";
 import { FilterModal } from "@/components/features/team-management/FilterModal";
 import { useSort } from "@/hooks/use-sort";
 import Image from "next/image";
+import { formatDateRange, formatDate } from "@/utils/date";
 
 function TeamMgtTimeoff() {
   const [selectedTimeoff, setSelectedTimeoff] = useState<Timeoff | null>(null);
@@ -182,7 +183,7 @@ function TeamMgtTimeoff() {
                         <small className="text-xs md:hidden">
                           <div className="flex items-center gap-2">
                             <span className="text-[#7F8C9F]">
-                              {timeoff.startDate} - {timeoff.endDate}
+                              {formatDateRange(timeoff.startDate, timeoff.endDate)}
                             </span>
                             <span className="text-[#DCE0E5]">|</span>
                             <p>{timeoff.totalDuration} days</p>
@@ -190,7 +191,7 @@ function TeamMgtTimeoff() {
                         </small>
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
-                        {timeoff.startDate} - {timeoff.endDate}
+                        {formatDateRange(timeoff.startDate, timeoff.endDate)}
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
                         {timeoff.totalDuration} days
@@ -210,11 +211,11 @@ function TeamMgtTimeoff() {
                         </div>
                         {/* mobile view */}
                         <small className="md:hidden text-xs text-[#414F62]">
-                          {timeoff.submittedAt}
+                          {formatDate(timeoff.submittedAt)}
                         </small>
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
-                        {timeoff.submittedAt}
+                        {formatDate(timeoff.submittedAt)}
                       </td>
                     </tr>
                   ))}
