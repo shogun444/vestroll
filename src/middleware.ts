@@ -2,14 +2,37 @@ import { NextRequest, NextResponse } from "next/server";
 import { JWTService } from "@/server/services/jwt.service";
 
 /**
- * Global API Middleware
+ * Routes that require a valid session.
+ * Unauthorized access to these paths will trigger a redirect to /login.
+ */
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/finance",
+  "/payroll",
+  "/settings",
+  "/contracts",
+  "/employees",
+  "/invoices",
+  "/team",
+  "/team-management",
+  "/profile-settings",
+  "/edit-profile",
+  "/billing-address",
+  "/expenses",
+];
+
+/**
+ * Global API and Page Middleware
  *
- * Handles cross-cutting concerns for all API requests:
+ * Handles cross-cutting concerns for all matching requests:
  * 1. Request Tracing: Injects a unique `x-response-id` into request and response headers.
  * 2. CORS Handling: Validates the request origin against allowed origins and handles preflight OPTIONS requests.
- * 3. Identity Verification: Verifies incoming access tokens/cookies for specific API routes.
+ * 3. Identity Verification & Route Protection: 
+ *    - Verifies access tokens for API routes.
+ *    - Enforces authentication for protected dashboard pages, redirecting to /login if missing or invalid.
  */
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
   const responseId = crypto.randomUUID();
 
   const requestHeaders = new Headers(req.headers);
@@ -53,7 +76,31 @@ export async function middleware(req: NextRequest) {
     req.cookies.get("access_token")?.value ??
     req.headers.get("authorization")?.replace("Bearer ", "");
 
-  if (token) {
+  const isApiRoute = pathname.startsWith("/api");
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
+    pathname.startsWith(route),
+  );
+
+  // Enforce route protection for dashboard pages
+  if (isProtectedRoute && !isApiRoute) {
+    if (!token) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      await JWTService.verifyAccessToken(token);
+    } catch {
+      // Token is invalid or expired
+      const response = NextResponse.redirect(new URL("/login", req.url));
+      response.cookies.delete("access_token");
+      return response;
+    }
+  }
+
+  // Identity verification for API routes
+  if (isApiRoute && token) {
     try {
       await JWTService.verifyAccessToken(token);
     } catch {
@@ -79,5 +126,20 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/v1/:path*",
+  matcher: [
+    "/api/v1/:path*",
+    "/dashboard/:path*",
+    "/finance/:path*",
+    "/payroll/:path*",
+    "/settings/:path*",
+    "/contracts/:path*",
+    "/employees/:path*",
+    "/invoices/:path*",
+    "/team/:path*",
+    "/team-management/:path*",
+    "/profile-settings/:path*",
+    "/edit-profile/:path*",
+    "/billing-address/:path*",
+    "/expenses/:path*",
+  ],
 };
