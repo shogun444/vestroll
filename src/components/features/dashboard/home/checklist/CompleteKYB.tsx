@@ -10,9 +10,9 @@ import FileUpload from "@/components/ui/file-upload";
 interface KybFormData {
   businessRegistrationType: string;
   businessRegistrationNo: string;
-  incorporationCertificate: File | null;
-  memorandumArticle: File | null;
-  formC02C07: File | null;
+  incorporationCertificatePath: string;
+  memorandumArticlePath: string;
+  formC02C07Path: string;
 }
 
 const businessRegistrationTypes = [
@@ -32,9 +32,9 @@ export default function CompleteKYBPage() {
   const [formData, setFormData] = useState<KybFormData>({
     businessRegistrationType: "",
     businessRegistrationNo: "",
-    incorporationCertificate: null,
-    memorandumArticle: null,
-    formC02C07: null,
+    incorporationCertificatePath: "",
+    memorandumArticlePath: "",
+    formC02C07Path: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,11 +46,35 @@ export default function CompleteKYBPage() {
     }));
   };
 
-  const handleFileSelect = (field: keyof KybFormData, file: File | null) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: file,
-    }));
+  const uploadFile = async (file: File, field: keyof KybFormData) => {
+    try {
+      const response = await fetch("/api/v1/kyb/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+        }),
+      });
+
+      const { data, success, message } = await response.json();
+      if (!success) throw new Error(message);
+
+      const { signedUrl, key } = data;
+
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadRes.ok) throw new Error("Failed to upload to S3");
+
+      setFormData((prev) => ({ ...prev, [field]: key }));
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setError("File upload failed. Please try again.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,26 +83,16 @@ export default function CompleteKYBPage() {
     setError(null);
 
     try {
-      const submitData = new FormData();
-      submitData.append("registrationType", formData.businessRegistrationType);
-      submitData.append("registrationNo", formData.businessRegistrationNo);
-
-      if (formData.incorporationCertificate) {
-        submitData.append(
-          "incorporationCertificate",
-          formData.incorporationCertificate,
-        );
-      }
-      if (formData.memorandumArticle) {
-        submitData.append("memorandumArticle", formData.memorandumArticle);
-      }
-      if (formData.formC02C07) {
-        submitData.append("formC02C07", formData.formC02C07);
-      }
-
       const response = await fetch("/api/v1/kyb/submit", {
         method: "POST",
-        body: submitData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrationType: formData.businessRegistrationType,
+          registrationNo: formData.businessRegistrationNo,
+          incorporationCertificatePath: formData.incorporationCertificatePath,
+          memorandumArticlePath: formData.memorandumArticlePath,
+          formC02C07Path: formData.formC02C07Path || undefined,
+        }),
       });
 
       const result = await response.json();
@@ -164,10 +178,8 @@ export default function CompleteKYBPage() {
           <FileUpload
             key="incorporation-certificate"
             label="Upload Incorporation Certificate"
-            onFileSelect={(file) =>
-              handleFileSelect("incorporationCertificate", file)
-            }
-            file={formData.incorporationCertificate}
+            onFileSelect={(file) => file && uploadFile(file, "incorporationCertificatePath")}
+            file={formData.incorporationCertificatePath ? new File([], "Uploaded Certificate") : null}
             accept=".svg,.png,.jpg,.jpeg,.gif,.pdf"
             maxSize={5}
             isUploading={isSubmitting}
@@ -179,8 +191,8 @@ export default function CompleteKYBPage() {
           <FileUpload
             key="memorandum-article"
             label="Memorandum & Article of Association"
-            onFileSelect={(file) => handleFileSelect("memorandumArticle", file)}
-            file={formData.memorandumArticle}
+            onFileSelect={(file) => file && uploadFile(file, "memorandumArticlePath")}
+            file={formData.memorandumArticlePath ? new File([], "Uploaded Memorandum") : null}
             accept=".svg,.png,.jpg,.jpeg,.gif,.pdf"
             maxSize={5}
             isUploading={isSubmitting}
@@ -192,8 +204,8 @@ export default function CompleteKYBPage() {
           <FileUpload
             key="form-c02-c07"
             label="Form C02/C07"
-            onFileSelect={(file) => handleFileSelect("formC02C07", file)}
-            file={formData.formC02C07}
+            onFileSelect={(file) => file && uploadFile(file, "formC02C07Path")}
+            file={formData.formC02C07Path ? new File([], "Uploaded Form C02/C07") : null}
             accept=".svg,.png,.jpg,.jpeg,.gif,.pdf"
             maxSize={5}
             isUploading={isSubmitting}

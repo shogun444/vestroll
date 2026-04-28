@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import ModalWelcomeOnboard from "@/components/shared/modal-welcome-onboard";
 import Stepper from "@/components/features/auth/Stepper";
 import { AuthService } from "@/lib/api/auth";
+import FileUpload from "@/components/ui/file-upload";
 
 interface FormData {
   companyName: string;
@@ -11,6 +12,11 @@ interface FormData {
   companyIndustry: string;
   headquarterCountry: string;
   businessDescription: string;
+  registrationType: string;
+  registrationNo: string;
+  incorporationCertificatePath: string;
+  memorandumArticlePath: string;
+  formC02C07Path: string;
 }
 
 interface FormErrors {
@@ -19,6 +25,10 @@ interface FormErrors {
   companyIndustry?: string;
   headquarterCountry?: string;
   businessDescription?: string;
+  registrationType?: string;
+  registrationNo?: string;
+  incorporationCertificate?: string;
+  memorandumArticle?: string;
 }
 
 interface DropdownProps {
@@ -91,6 +101,11 @@ const BusinessRegistrationForm: React.FC = () => {
     companyIndustry: "",
     headquarterCountry: "",
     businessDescription: "",
+    registrationType: "",
+    registrationNo: "",
+    incorporationCertificatePath: "",
+    memorandumArticlePath: "",
+    formC02C07Path: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -134,6 +149,19 @@ const BusinessRegistrationForm: React.FC = () => {
     "Netherlands",
     "Nigeria",
     "South Africa",
+    "Other",
+  ];
+
+  const registrationTypes = [
+    "Limited Liability Company (LLC)",
+    "Corporation",
+    "Partnership",
+    "Sole Proprietorship",
+    "Limited Partnership (LP)",
+    "Limited Liability Partnership (LLP)",
+    "S Corporation",
+    "Non-Profit Corporation",
+    "Professional Corporation",
     "Other",
   ];
 
@@ -182,8 +210,61 @@ const BusinessRegistrationForm: React.FC = () => {
         "Description must be at least 10 characters long";
     }
 
+    if (!formData.registrationType) {
+      newErrors.registrationType = "Registration type is required";
+    }
+
+    if (!formData.registrationNo.trim()) {
+      newErrors.registrationNo = "Registration number is required";
+    }
+
+    if (!formData.incorporationCertificatePath) {
+      newErrors.incorporationCertificate = "Incorporation certificate is required";
+    }
+
+    if (!formData.memorandumArticlePath) {
+      newErrors.memorandumArticle = "Memorandum & Article is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const uploadFile = async (file: File, field: keyof FormData) => {
+    try {
+      // 1. Get signed URL
+      const response = await fetch("/api/v1/kyb/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+        }),
+      });
+
+      const { data, success, message } = await response.json();
+      if (!success) throw new Error(message);
+
+      const { signedUrl, key } = data;
+
+      // 2. Upload to S3
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadRes.ok) throw new Error("Failed to upload to S3");
+
+      // 3. Update state
+      setFormData((prev) => ({ ...prev, [field]: key }));
+      if (errors[field as keyof FormErrors]) {
+        setErrors((prev) => ({ ...prev, [field as keyof FormErrors]: undefined }));
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setErrors((prev) => ({ ...prev, [field as keyof FormErrors]: "Upload failed. Please try again." }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,6 +296,19 @@ const BusinessRegistrationForm: React.FC = () => {
       // Submit complete registration data using AuthService
       await AuthService.completeRegistration(completeData);
 
+      // Submit KYB data
+      await fetch("/api/v1/kyb/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registrationType: formData.registrationType,
+          registrationNo: formData.registrationNo,
+          incorporationCertificatePath: formData.incorporationCertificatePath,
+          memorandumArticlePath: formData.memorandumArticlePath,
+          formC02C07Path: formData.formC02C07Path || undefined,
+        }),
+      });
+
       console.log("Registration completed successfully:", completeData);
       localStorage.removeItem("registrationData");
       setShowWelcomeModal(true);
@@ -239,7 +333,11 @@ const BusinessRegistrationForm: React.FC = () => {
     formData.companySize &&
     formData.companyIndustry &&
     formData.headquarterCountry &&
-    formData.businessDescription;
+    formData.businessDescription &&
+    formData.registrationType &&
+    formData.registrationNo &&
+    formData.incorporationCertificatePath &&
+    formData.memorandumArticlePath;
 
   return (
     <div className="flex items-center justify-center w-full max-w-md ">
@@ -355,6 +453,69 @@ const BusinessRegistrationForm: React.FC = () => {
                 {errors.businessDescription}
               </p>
             )}
+          </div>
+
+          {/* KYB Section */}
+          <div className="pt-4 border-t border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">KYB Documents</h3>
+            
+            <div className="space-y-6">
+              <Dropdown
+                label="Business Registration Type"
+                value={formData.registrationType}
+                onChange={(value) => handleInputChange("registrationType", value)}
+                options={registrationTypes}
+                placeholder="Select registration type"
+                error={errors.registrationType}
+                required
+                isOpen={openDropdown === "registrationType"}
+                onToggle={() => setOpenDropdown(openDropdown === "registrationType" ? null : "registrationType")}
+              />
+
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Registration Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.registrationNo}
+                  onChange={(e) => handleInputChange("registrationNo", e.target.value)}
+                  placeholder="Enter registration number"
+                  className={`w-full px-4 py-3 bg-gray-50 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5E2A8C] focus:border-[#5E2A8C] transition-all duration-200 ${
+                    errors.registrationNo ? "border-red-300" : "border-gray-200"
+                  }`}
+                />
+                {errors.registrationNo && (
+                  <p className="mt-2 text-sm text-red-600">{errors.registrationNo}</p>
+                )}
+              </div>
+
+              <FileUpload
+                label="Upload Incorporation Certificate"
+                onFileSelect={(file) => file && uploadFile(file, "incorporationCertificatePath")}
+                file={formData.incorporationCertificatePath ? new File([], "Uploaded Certificate") : null}
+                accept=".png,.jpg,.jpeg,.pdf"
+                maxSize={5}
+                error={errors.incorporationCertificate}
+              />
+
+              <FileUpload
+                label="Memorandum & Article of Association"
+                onFileSelect={(file) => file && uploadFile(file, "memorandumArticlePath")}
+                file={formData.memorandumArticlePath ? new File([], "Uploaded Memorandum") : null}
+                accept=".png,.jpg,.jpeg,.pdf"
+                maxSize={5}
+                error={errors.memorandumArticle}
+              />
+
+              <FileUpload
+                label="Form C02/C07 (Optional)"
+                onFileSelect={(file) => file && uploadFile(file, "formC02C07Path")}
+                file={formData.formC02C07Path ? new File([], "Uploaded Form C02/C07") : null}
+                accept=".png,.jpg,.jpeg,.pdf"
+                maxSize={5}
+              />
+            </div>
           </div>
 
           {/* Continue Button */}
