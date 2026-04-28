@@ -1,3 +1,4 @@
+
 'use client';
 import Table from '@/components/shared/table/Table';
 import { TableColumn } from '@/components/shared/table/TableHeader';
@@ -7,80 +8,121 @@ import { UsdtIcon } from '@/../public/svg';
 import { RoutePaths } from '@/routes/routesPath';
 import { formatCurrency } from '@/utils/formatters';
 
-interface Invoice {
+import Table from "@/components/shared/table/Table";
+import { TableColumn } from "@/components/shared/table/TableHeader";
+import { useEffect, useState } from "react";
+import { UsdtIcon } from "@/../public/svg";
+import { Filter, Search } from "lucide-react";
+
+type ContractType = "Fixed rate" | "Pay as you go" | "Milestone";
+
+interface PayrollRecord {
   id: string;
-  invoiceNo: string;
-  title: string;
+  employeeName: string;
+  employeeRole: string;
+  contractType: ContractType;
   amount: number;
   paidIn: string;
-  status: 'Pending' | 'Overdue' | 'Paid' | 'In-Progress';
-  issueDate: string;
-  name?: string;
-  number?: string;
-  company?: string;
-  [key: string]: string | number | undefined;
+  timestamp: string;
 }
 
-const invoices: Invoice[] = [
+const MOCK_RECORDS: PayrollRecord[] = [
   {
-    id: '1',
-    invoiceNo: '20',
-    title: '[CUR]10/hr',
+    id: "1",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Fixed rate",
     amount: 1200,
-    paidIn: 'NGN',
-    status: 'Pending',
-    issueDate: '25th Oct 2025',
-    name: 'Lagos Payroll Invoice',
-    number: '20',
-    company: 'Vestroll Nigeria',
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
   },
   {
-    id: '2',
-    invoiceNo: '14',
-    title: '[CUR]10/hr',
-    amount: 2400,
-    paidIn: 'USD',
-    status: 'Overdue',
-    issueDate: '25th Oct 2025',
-    name: 'North America Payroll Invoice',
-    number: '14',
-    company: 'Vestroll Inc.',
+    id: "2",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Pay as you go",
+    amount: 1200,
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
   },
   {
-    id: '3',
-    invoiceNo: '12',
-    title: '[CUR]10/hr',
-    amount: 950,
-    paidIn: 'USDT',
-    status: 'Paid',
-    issueDate: '25th Oct 2025',
-    name: 'Treasury Settlement Invoice',
-    number: '12',
-    company: 'Vestroll Treasury',
+    id: "3",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Milestone",
+    amount: 1200,
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
   },
   {
-    id: '4',
-    invoiceNo: '18',
-    title: '[CUR]8/hr',
-    amount: 640,
-    paidIn: 'NGN',
-    status: 'In-Progress',
-    issueDate: '26th Oct 2025',
-    name: 'Contractor Bank Transfer',
-    number: '18',
-    company: 'Vestroll Nigeria',
+    id: "4",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Fixed rate",
+    amount: 1200,
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
+  },
+  {
+    id: "5",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Fixed rate",
+    amount: 1200,
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
+  },
+  {
+    id: "6",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Pay as you go",
+    amount: 1200,
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
+  },
+  {
+    id: "7",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Milestone",
+    amount: 1200,
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
+  },
+  {
+    id: "8",
+    employeeName: "James Akinbiola",
+    employeeRole: "Front-end developer",
+    contractType: "Fixed rate",
+    amount: 1200,
+    paidIn: "USDT",
+    timestamp: "25th Oct 2025 | 2:00pm",
   },
 ];
 
-const currencySymbolMap: Record<string, string> = {
-  NGN: '₦',
-  USD: '$',
+const CONTRACT_TYPE_STYLES: Record<ContractType, string> = {
+  "Fixed rate": "border-[#5E2A8C] text-[#5E2A8C] bg-white",
+  "Pay as you go": "border-[#5E2A8C] text-[#5E2A8C] bg-white",
+  Milestone: "border-[#5E2A8C] text-[#5E2A8C] bg-white",
 };
 
-function getCurrencyPrefix(currency: string): string {
-  return currencySymbolMap[currency] ?? currencySymbolMap.USD;
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
+const columns: TableColumn[] = [
+  { key: "employee", header: "Employee", width: "2fr" },
+  { key: "contractType", header: "Contract type", width: "1.5fr" },
+  { key: "amount", header: "Amount", align: "center" },
+  { key: "paidIn", header: "Paid in", align: "center" },
+  { key: "timestamp", header: "Timestamp", align: "right" },
+];
 function formatAmount(amount: number, currency: string): string {
   return formatCurrency(amount, { currency, isKobo: false });
 }
@@ -97,185 +139,182 @@ function formatRate(title: string, currency: string): string {
   return `${getCurrencyPrefix(currency)}${title.slice(1)}`;
 }
 
-function shouldShowCryptoIcon(currency: string): boolean {
-  return currency === 'USDT';
-}
+const SkeletonRow = () => (
+  <div className="flex items-center px-4 py-4 border-b border-gray-100 animate-pulse">
+    <div className="w-6 mr-4">
+      <div className="w-4 h-4 bg-gray-200 rounded" />
+    </div>
+    <div
+      className="flex-1 grid gap-4"
+      style={{ gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr" }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
+        <div className="space-y-1.5">
+          <div className="h-3 w-28 bg-gray-200 rounded" />
+          <div className="h-2.5 w-20 bg-gray-100 rounded" />
+        </div>
+      </div>
+      <div className="h-6 w-24 bg-gray-200 rounded-full" />
+      <div className="h-3 w-16 bg-gray-200 rounded mx-auto" />
+      <div className="h-6 w-16 bg-gray-200 rounded-full mx-auto" />
+      <div className="h-3 w-28 bg-gray-200 rounded ml-auto" />
+    </div>
+  </div>
+);
 
 const PayoutHistory = () => {
-  const [search, setSearch] = useState<string>('');
+  const [search, setSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const router = useRouter();
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(t);
+  }, []);
 
-  const filteredInvoices = invoices.filter(
-    (invoice) =>
-      invoice.name?.toLowerCase().includes(search.toLowerCase()) ||
-      invoice.number?.toLowerCase().includes(search.toLowerCase()) ||
-      invoice.company?.toLowerCase().includes(search.toLowerCase()) ||
-      invoice.title?.toLowerCase().includes(search.toLowerCase()) ||
-      invoice.invoiceNo?.toLowerCase().includes(search.toLowerCase()),
+  const filtered = MOCK_RECORDS.filter((r) =>
+    r.employeeName.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const invoiceColumns: TableColumn[] = [
-    { key: 'invoiceNo', header: 'Worked hours' },
-    { key: 'title', header: 'Rate' },
-    { key: 'amount', header: 'Calculated amount', align: 'center' },
-    { key: 'paidIn', header: 'Paid in', align: 'center' },
-    { key: 'status', header: 'Status', align: 'center' },
-    { key: 'issueDate', header: 'Date', align: 'right' },
-  ];
-
-  const getStatusBadge = (status: Invoice['status']) => {
-    switch (status) {
-      case 'Pending':
-        return ` border-[#E79A23] bg-[#FEF7EB] text-[#E79A23]`;
-      case 'Overdue':
-        return `border-[#C64242] bg-[#FEECEC] text-[#C64242]`;
-      case 'Paid':
-        return `border-[#26902B] bg-[#EDFEEC] text-[#26902B]`;
-      case 'In-Progress':
-        return `border-[#3B82F6] bg-[#EFF6FF] text-[#3B82F6]`;
-      default:
-        return;
-    }
-  };
-
-  const renderInvoiceCell = (item: Invoice, column: TableColumn) => {
+  const renderCell = (item: PayrollRecord, column: TableColumn) => {
     switch (column.key) {
-      case 'title':
+      case "employee":
         return (
-          <div className="font-semibold text-text-header">
-            {formatRate(item.title, item.paidIn)}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#EDE9FE] flex items-center justify-center shrink-0">
+              <span className="text-xs font-semibold text-[#5E2A8C]">
+                {getInitials(item.employeeName)}
+              </span>
+            </div>
+            <div>
+              <p className="font-semibold text-[#111827] text-sm">
+                {item.employeeName}
+              </p>
+              <p className="text-xs text-[#6B7280]">{item.employeeRole}</p>
+            </div>
           </div>
         );
-      case 'amount':
-        return (
-          <div className="font-semibold text-text-header">
-            {formatAmount(item.amount, item.paidIn)}
-          </div>
-        );
-      case 'paidIn':
-        return (
-          <div className="flex items-center font-medium gap-1 py-1.5 px-3 border border-border-primary bg-fill-background rounded-full w-fit mx-auto">
-            {shouldShowCryptoIcon(item.paidIn) ? <UsdtIcon /> : null}
-            <span className="text-text-header">{item.paidIn}</span>
-          </div>
-        );
-      case 'status':
+      case "contractType":
         return (
           <span
-            className={`px-2 py-1 rounded-full text-sm font-semibold border ${getStatusBadge(
-              item.status,
-            )}`}
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${CONTRACT_TYPE_STYLES[item.contractType]}`}
           >
-            {item.status}
+            {item.contractType}
           </span>
         );
-      case 'invoiceNo':
-        return <p className="font-medium text-gray-900">{item.invoiceNo}</p>;
-      case 'title':
-        return <span className="text-gray-600">{item.title}</span>;
-      case 'issueDate':
-        return <span className="text-gray-600">{item.issueDate}</span>;
-      default:
+      case "amount":
         return (
-          (item as Record<string, string | number | undefined>)[column.key] ||
-          '-'
+          <span className="font-semibold text-[#111827]">
+            ${item.amount.toLocaleString()}.00
+          </span>
         );
-    }
-  };
-
-  const renderMobileCell = (item: Invoice) => (
-    <div className="flex justify-between w-full gap-4">
-      <div className="flex-1 min-w-0 space-y-2">
-        <p className="font-semibold text-gray-500 truncate">
-          {item.invoiceNo} @ {formatRate(item.title, item.paidIn)}
-        </p>
-        <span className="flex items-center gap-2 ">
-          <p className="text-xs font-medium text-gray-300">
-            {formatAmount(item.amount, item.paidIn)}
-          </p>
-
-          <div className="self-stretch w-px bg-gray-150" />
-
-          <div className="flex items-center gap-1 font-medium ">
-            {shouldShowCryptoIcon(item.paidIn) ? <UsdtIcon /> : null}
-
-            <span className="text-sm font-medium text-gray-600">
+      case "paidIn":
+        return (
+          <div className="flex items-center gap-1 py-1.5 px-3 border border-border-primary bg-fill-background rounded-full w-fit mx-auto">
+            <UsdtIcon />
+            <span className="text-sm font-medium text-[#111827]">
               {item.paidIn}
             </span>
           </div>
+        );
+      case "timestamp":
+        return <span className="text-sm text-[#6B7280]">{item.timestamp}</span>;
+      default:
+        return null;
+    }
+  };
+
+  const renderMobileCell = (item: PayrollRecord) => (
+    <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 space-y-2">
+      {/* Row 1: name + badge */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-bold text-[#111827] text-base">
+          {item.employeeName}
+        </p>
+        <span
+          className={`inline-flex shrink-0 px-3 py-1 rounded-full text-xs font-semibold border ${CONTRACT_TYPE_STYLES[item.contractType]}`}
+        >
+          {item.contractType}
         </span>
       </div>
-
-      <div className="flex flex-col items-end justify-between space-y-2 shrink-0">
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusBadge(
-            item.status,
-          )}`}
-        >
-          {item.status}
+      {/* Row 2: amount | token | timestamp */}
+      <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+        <span className="font-semibold text-[#111827]">
+          ${item.amount.toLocaleString()}.00
         </span>
-        <p className="text-xs font-medium text-gray-400">25th Oct 2025</p>
+        <span className="text-[#DCE0E5]">|</span>
+        <div className="flex items-center gap-1">
+          <UsdtIcon />
+          <span className="font-medium text-[#111827]">{item.paidIn}</span>
+        </div>
+        <span className="text-[#DCE0E5]">|</span>
+        <span>{item.timestamp}</span>
       </div>
     </div>
   );
 
-  // Handle item selection
   const handleSelectItem = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedItems([...selectedItems, id]);
-    } else {
-      setSelectedItems(selectedItems.filter((item) => item !== id));
-    }
-  };
-
-  // Handle select all
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedItems(
-      checked ? filteredInvoices.map((invoice) => invoice.id) : [],
+    setSelectedItems((prev) =>
+      checked ? [...prev, id] : prev.filter((i) => i !== id),
     );
   };
 
-  const handleRowClick = (invoice: Invoice) => {
-    router.push(`${RoutePaths.INVOICES}/${invoice.invoiceNo.replace('#', '')}`);
-  };
-
-  const showModal = () => {
-    console.log('Show filter modal');
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedItems(checked ? filtered.map((r) => r.id) : []);
   };
 
   return (
-    <div className="w-full p-4 space-y-2 bg-white rounded-sm shadow">
-      <span
-        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border text-[#5A42DE] border-[#5A42DE] bg-[#E8E5FA] `}
-      >
-        Payout History
-      </span>
+    <div className="w-full bg-white rounded-xl shadow-sm border border-[#E5E7EB]">
+      {/* Section header */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#E5E7EB]">
+        <h2 className="text-base font-semibold text-[#111827]">History</h2>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 text-sm border border-[#DCE0E5] rounded-lg w-44 sm:w-64 focus:outline-none focus:ring-2 focus:ring-[#5E2A8C] focus:border-[#5E2A8C] placeholder-[#9CA3AF] dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+            />
+          </div>
+          <button className="flex items-center justify-center p-2 border border-[#DCE0E5] rounded-lg text-[#6B7280] hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+            <Filter className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
 
-      <Table
-        showFilterHeader={false}
-        showCheckbox={false}
-        data={filteredInvoices}
-        columns={invoiceColumns}
-        search={search}
-        setSearch={setSearch}
-        showModal={showModal}
-        selectedTab="Invoice history"
-        searchPlaceholder="Search by title..."
-        selectedItems={selectedItems}
-        onSelectItem={handleSelectItem}
-        onSelectAll={handleSelectAll}
-        onRowClick={handleRowClick}
-        renderCell={renderInvoiceCell}
-        emptyTitle={search ? 'No invoices found' : 'No invoices yet'}
-        emptyDescription={
-          search
-            ? `No invoices match "${search}". Try adjusting your search.`
-            : 'Invoices sent to you will be displayed here'
-        }
-        renderMobileCell={renderMobileCell}
-      />
+      {/* Loading skeleton */}
+      {loading ? (
+        <div>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonRow key={i} />
+          ))}
+        </div>
+      ) : (
+        <Table
+          showFilterHeader={false}
+          showCheckbox={true}
+          data={filtered}
+          columns={columns}
+          search={search}
+          setSearch={setSearch}
+          showModal={() => {}}
+          selectedItems={selectedItems}
+          onSelectItem={handleSelectItem}
+          onSelectAll={handleSelectAll}
+          renderCell={renderCell}
+          renderMobileCell={renderMobileCell}
+          emptyTitle={search ? "No results found" : "No payout history yet"}
+          emptyDescription={
+            search
+              ? `No records match "${search}". Try a different name.`
+              : "Payroll payouts will appear here once processed."
+          }
+        />
+      )}
     </div>
   );
 };
