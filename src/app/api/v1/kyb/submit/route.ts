@@ -4,6 +4,7 @@ import { AppError, ValidationError } from "@/server/utils/errors";
 import { AuthUtils } from "@/server/utils/auth";
 import { KybSubmitSchema, KYB_FILE_CONSTRAINTS } from "@/server/validations/kyb.schema";
 import { KybService } from "@/server/services/kyb.service";
+import { KybUploadService } from "@/server/services/kyb-upload.service";
 import { ZodError } from "zod";
 import { withKybRateLimit } from "@/server/services/rate-limit.service";
 
@@ -19,28 +20,25 @@ import { withKybRateLimit } from "@/server/services/rate-limit.service";
  *     requestBody:
  *       required: true
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
  *             required:
  *               - registrationType
  *               - registrationNo
- *               - incorporationCertificate
- *               - memorandumArticle
+ *               - incorporationCertificatePath
+ *               - memorandumArticlePath
  *             properties:
  *               registrationType:
  *                 type: string
  *               registrationNo:
  *                 type: string
- *               incorporationCertificate:
+ *               incorporationCertificatePath:
  *                 type: string
- *                 format: binary
- *               memorandumArticle:
+ *               memorandumArticlePath:
  *                 type: string
- *                 format: binary
- *               formC02C07:
+ *               formC02C07Path:
  *                 type: string
- *                 format: binary
  *     responses:
  *       201:
  *         description: KYB documents submitted successfully
@@ -56,108 +54,49 @@ import { withKybRateLimit } from "@/server/services/rate-limit.service";
  *         description: KYB already submitted or approved
  */
 export const POST = withKybRateLimit(async (req: NextRequest) => {
-  const uploadedPublicIds: string[] = [];
-
   try {
-
     const { userId } = await AuthUtils.authenticateRequest(req);
+    const body = await req.json();
 
-    const formData = await req.formData();
-
-    const registrationType = formData.get("registrationType") as string | null;
-    const registrationNo = formData.get("registrationNo") as string | null;
+    const {
+      registrationType,
+      registrationNo,
+      incorporationCertificatePath,
+      memorandumArticlePath,
+      formC02C07Path,
+    } = body;
 
     const validatedFields = KybSubmitSchema.parse({
       registrationType,
       registrationNo,
     });
 
-    const incorporationCertificate = formData.get("incorporationCertificate");
-    const memorandumArticle = formData.get("memorandumArticle");
-    const formC02C07 = formData.get("formC02C07");
-
-    if (!incorporationCertificate || !(incorporationCertificate instanceof File)) {
-      throw new ValidationError("Incorporation certificate is required", {
-        fieldErrors: { incorporationCertificate: "File is required" },
+    if (!incorporationCertificatePath) {
+      throw new ValidationError("Incorporation certificate path is required", {
+        fieldErrors: { incorporationCertificatePath: "Path is required" },
       });
     }
 
-    if (!memorandumArticle || !(memorandumArticle instanceof File)) {
-      throw new ValidationError("Memorandum & Article of Association is required", {
-        fieldErrors: { memorandumArticle: "File is required" },
+    if (!memorandumArticlePath) {
+      throw new ValidationError("Memorandum & Article of Association path is required", {
+        fieldErrors: { memorandumArticlePath: "Path is required" },
       });
-    }
-
-    const filesToValidate: { file: File; name: string }[] = [
-      { file: incorporationCertificate, name: "incorporationCertificate" },
-      { file: memorandumArticle, name: "memorandumArticle" },
-    ];
-
-    const hasFormC02C07 = formC02C07 && formC02C07 instanceof File;
-    if (hasFormC02C07) {
-      filesToValidate.push({ file: formC02C07, name: "formC02C07" });
-    }
-
-    for (const { file, name } of filesToValidate) {
-      if (file.size > KYB_FILE_CONSTRAINTS.maxSizeBytes) {
-        throw new ValidationError(`${name} exceeds maximum file size of 5MB`, {
-          fieldErrors: { [name]: "File size must be less than 5MB" },
-        });
-      }
-
-      if (
-        !KYB_FILE_CONSTRAINTS.allowedMimeTypes.includes(
-          file.type as (typeof KYB_FILE_CONSTRAINTS.allowedMimeTypes)[number],
-        )
-      ) {
-        throw new ValidationError(`${name} has an unsupported file type`, {
-          fieldErrors: { [name]: "Allowed types: PNG, JPG, SVG, GIF, PDF" },
-        });
-      }
-    }
-
-    const incCert = await KybService.uploadToCloudinary(
-      incorporationCertificate,
-      userId,
-      "incorporation-certificate",
-    );
-    uploadedPublicIds.push(incCert.publicId);
-
-    const memArticle = await KybService.uploadToCloudinary(
-      memorandumArticle,
-      userId,
-      "memorandum-article",
-    );
-    uploadedPublicIds.push(memArticle.publicId);
-
-    let formC02C07Result: { publicId: string; secureUrl: string } | null = null;
-    if (hasFormC02C07) {
-      formC02C07Result = await KybService.uploadToCloudinary(
-        formC02C07,
-        userId,
-        "form-c02-c07",
-      );
-      uploadedPublicIds.push(formC02C07Result.publicId);
     }
 
     const result = await KybService.submit({
       userId,
       registrationType: validatedFields.registrationType,
       registrationNo: validatedFields.registrationNo,
-      incorporationCertificatePath: incCert.publicId,
-      incorporationCertificateUrl: incCert.secureUrl,
-      memorandumArticlePath: memArticle.publicId,
-      memorandumArticleUrl: memArticle.secureUrl,
-      formC02C07Path: formC02C07Result?.publicId ?? null,
-      formC02C07Url: formC02C07Result?.secureUrl ?? null,
+      incorporationCertificatePath: incorporationCertificatePath,
+      incorporationCertificateUrl: KybUploadService.getPublicUrl(incorporationCertificatePath),
+      memorandumArticlePath: memorandumArticlePath,
+      memorandumArticleUrl: KybUploadService.getPublicUrl(memorandumArticlePath),
+      formC02C07Path: formC02C07Path ?? null,
+      formC02C07Url: formC02C07Path ? KybUploadService.getPublicUrl(formC02C07Path) : null,
     });
 
     return ApiResponse.success(result, "KYB documents submitted successfully", 201);
   } catch (error) {
-
-    if (uploadedPublicIds.length > 0) {
-      await KybService.deleteFromCloudinary(uploadedPublicIds);
-    }
 
     if (error instanceof ZodError) {
       const fieldErrors: Record<string, string> = {};
