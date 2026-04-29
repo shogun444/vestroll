@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/ui/toast";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { resetPasswordSchema, ResetPasswordFormData } from "@/utils/validation";
 import { useRouter } from "next/navigation";
 
@@ -270,8 +271,8 @@ const ResetPassword: React.FC = () => {
             }`}
           >
             {isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="w-5 h-5 mr-2 border-2 rounded-full border-white/30 border-t-white animate-spin"></div>
+              <div className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
                 Processing...
               </div>
             ) : (

@@ -2,6 +2,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import OTPVerification from "@/components/shared/otpVerificationModal";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { AuthService } from "@/lib/api/auth";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/ui/toast";
@@ -63,7 +64,7 @@ function VerifyOTPContent() {
 
 function VerifyOTPPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
       <VerifyOTPContent />
     </Suspense>
   );

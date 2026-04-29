@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { RegistrationFormData } from "../RegistrationWizard";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface Step1Props {
   formData: RegistrationFormData;
@@ -164,7 +165,14 @@ export default function Step1BasicInfo({
         disabled={isLoading}
         className="w-full py-4 mt-4 bg-[#5E2A8C] text-white rounded-xl font-semibold hover:bg-[#4E2275] transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Processing..." : "Continue"}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2">
+            <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
+            Processing...
+          </div>
+        ) : (
+          "Continue"
+        )}
       </button>
 
       <div className="mt-8 text-center">

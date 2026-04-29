@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Eye, EyeOff, Check } from "lucide-react";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface Step2Props {
   onNext: (password: string) => void;
@@ -137,7 +138,14 @@ export default function Step2Password({
             disabled={!canSubmit || isLoading}
             className="flex-1 py-4 bg-[#5E2A8C] text-white rounded-xl font-semibold hover:bg-[#4E2275] transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
           >
-            {isLoading ? "Processing..." : "Create password"}
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
+                Processing...
+              </div>
+            ) : (
+              "Create password"
+            )}
           </button>
         </div>
       </div>

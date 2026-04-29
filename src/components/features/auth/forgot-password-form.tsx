@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/ui/toast";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   forgotPasswordSchema,
   ForgotPasswordFormData,
@@ -98,8 +99,8 @@ const ForgotPasswordForm: React.FC = () => {
             aria-describedby="button-description"
           >
             {isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="w-4 h-4 mr-2 border-2 rounded-lg border-white/30 border-t-white animate-spin"></div>
+              <div className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
                 Sending...
               </div>
             ) : (

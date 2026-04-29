@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { RegistrationFormData } from "../RegistrationWizard";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface Step5Props {
   formData: RegistrationFormData;
@@ -209,7 +210,14 @@ export default function Step5BusinessDetails({
             disabled={!isFormValid || isLoading}
             className="flex-1 py-4 bg-[#5E2A8C] text-white rounded-xl font-semibold hover:bg-[#4E2275] transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
           >
-            {isLoading ? "Processing..." : "Complete Registration"}
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
+                Processing...
+              </div>
+            ) : (
+              "Complete Registration"
+            )}
           </button>
         </div>
       </form>

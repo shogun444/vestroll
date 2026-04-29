@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/ui/toast";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { loginSchema, LoginFormData } from "@/utils/validation";
 import { useRouter } from "next/navigation";
 
@@ -159,8 +160,8 @@ export default function LoginPage({
                   }`}
                 >
                   {isLoading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-5 h-5 mr-2 border-2 rounded-full border-white/30 border-t-white animate-spin"></div>
+                    <div className="flex items-center justify-center gap-2">
+                      <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
                       Signing in...
                     </div>
                   ) : (
