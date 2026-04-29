@@ -9,7 +9,11 @@ import {
   Upload,
   File,
   Trash2,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { TimeOffFormData, Employee } from "@/types/teamManagement.types";
 import { SelectEmployeeModal } from "./SelectEmployeeModal";
 
@@ -310,6 +314,7 @@ const DurationDisplay = ({ days }: { days: number }) => (
 );
 
 export const CreateTimeOffForm = ({ employees }: { employees: Employee[] }) => {
+  const router = useRouter();
   const [formData, setFormData] = useState<TimeOffFormData>({
     employee: null,
     timeOffType: "paid",
@@ -321,6 +326,9 @@ export const CreateTimeOffForm = ({ employees }: { employees: Employee[] }) => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitMessage, setSubmitMessage] = useState("");
 
   const reasonOptions = [
     "Vacation",
@@ -345,9 +353,87 @@ export const CreateTimeOffForm = ({ employees }: { employees: Employee[] }) => {
     return diffDays;
   };
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData);
-    alert("Time off request created successfully!");
+  const handleSubmit = async () => {
+    // Basic client-side validation
+    if (!formData.startDate || !formData.endDate) {
+      setSubmitStatus("error");
+      setSubmitMessage("Please select both a start date and an end date.");
+      return;
+    }
+
+    if (!formData.reason) {
+      setSubmitStatus("error");
+      setSubmitMessage("Please select a reason for your time-off request.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+    setSubmitMessage("");
+
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("access_token")
+          : null;
+
+      // Map the UI's timeOffType to the API's leaveType enum
+      // Paid → vacation, Unpaid → other
+      const leaveType = formData.timeOffType === "paid" ? "vacation" : "other";
+
+      const payload: Record<string, unknown> = {
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        leaveType,
+        reason: formData.reason,
+      };
+
+      // If an employee was explicitly selected (admin submitting on behalf)
+      if (formData.employee?.id) {
+        payload.employeeId = formData.employee.id;
+      }
+
+      const res = await fetch("/api/v1/team/time-off", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg =
+          data?.message ||
+          (Array.isArray(data?.errors)
+            ? data.errors.map((e: { message: string }) => e.message).join(", ")
+            : "Failed to submit request. Please try again.");
+        throw new Error(msg);
+      }
+
+      setSubmitStatus("success");
+      setSubmitMessage("Your time-off request has been submitted and is pending approval.");
+
+      // Reset form
+      setFormData({
+        employee: null,
+        timeOffType: "paid",
+        reason: "",
+        startDate: "",
+        endDate: "",
+        description: "",
+        attachment: null,
+      });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setSubmitStatus("error");
+      setSubmitMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -378,6 +464,25 @@ export const CreateTimeOffForm = ({ employees }: { employees: Employee[] }) => {
             onChange={(endDate) => setFormData({ ...formData, endDate })}
           />
           <DurationDisplay days={calculateDuration()} />
+
+          {/* Feedback banner */}
+          {submitStatus !== "idle" && (
+            <div
+              className={`flex items-start gap-3 rounded-lg border p-4 mb-4 ${
+                submitStatus === "success"
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+              }`}
+            >
+              {submitStatus === "success" ? (
+                <CheckCircle size={18} className="mt-0.5 flex-shrink-0 text-green-600" />
+              ) : (
+                <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-600" />
+              )}
+              <p className="text-sm">{submitMessage}</p>
+            </div>
+          )}
+
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description (optional)
@@ -397,10 +502,19 @@ export const CreateTimeOffForm = ({ employees }: { employees: Employee[] }) => {
             onChange={(attachment) => setFormData({ ...formData, attachment })}
           />
           <button
+            id="create-timeoff-submit"
             onClick={handleSubmit}
-            className="w-full bg-primary-500 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            disabled={isSubmitting}
+            className="w-full bg-primary-500 text-white font-medium py-3 px-6 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Create record
+            {isSubmitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Submitting…
+              </>
+            ) : (
+              "Create record"
+            )}
           </button>
         </div>
       </div>
