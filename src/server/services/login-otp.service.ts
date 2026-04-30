@@ -3,7 +3,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { OTPService } from "./otp.service";
 import { EmailService } from "./email.service";
 import { UserService } from "./user.service";
-import { JWTTokenService } from "./jwt-token.service";
+import { JWTService } from "./jwt.service";
 import { SessionManagementService } from "./session-management.service";
 import { NotFoundError, BadRequestError, UnauthorizedError, ForbiddenError } from "../utils/errors";
 import { Logger } from "./logger.service";
@@ -120,15 +120,16 @@ export class LoginOTPService {
     // Issue tokens
     const sessionId = crypto.randomUUID();
 
-    const accessToken = await JWTTokenService.generateAccessToken({
+    const accessToken = await JWTService.generateAccessToken({
       userId: user.id,
       email: user.email,
     });
 
-    const refreshToken = await JWTTokenService.generateRefreshToken(
-      { userId: user.id, email: user.email, sessionId },
-      rememberMe,
-    );
+    const refreshToken = await JWTService.generateRefreshToken({
+      userId: user.id,
+      email: user.email,
+      sessionId,
+    });
 
     const expiresAt = new Date(Date.now() + (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000);
 

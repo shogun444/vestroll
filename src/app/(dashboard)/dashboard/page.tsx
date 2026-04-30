@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
 import OnboardingCheckList from "@/components/features/dashboard/home/OnboardingCheckList";
 import RequiringAttention from "@/components/features/dashboard/home/RequiringAttention";
 import QuickAction from "@/components/features/dashboard/home/QuickAction";
 import { motion, Variants } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import avatar from "@/../public/avatar/avatar.png";
 import { KybService } from "@/lib/api/kyb";
 import type { KybVerificationStatus } from "@/types/kyb";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -35,6 +35,7 @@ export default function DashboardPage() {
 
   const user = {
     name: "Peter",
+    firstName: "Peter",
     email: "peter@vestroll.com",
     userType: "Administrator",
     avatar: avatar,

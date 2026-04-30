@@ -81,13 +81,11 @@ export class AttentionService {
     ]);
 
     return {
-      contractsPendingSignature:
-        contractsResult[0]?.contractsPendingSignature ?? 0,
-      milestonesCompleted: milestonesResult[0]?.milestonesCompleted ?? 0,
-      invoicesRequiringPayment:
-        invoicesResult[0]?.invoicesRequiringPayment ?? 0,
-      pendingTimesheets: timesheetsResult[0]?.pendingTimesheets ?? 0,
-      pendingTimeOffRequests: timeOffResult[0]?.pendingTimeOffRequests ?? 0,
+      contractsPendingSignature: Number(contractsResult[0]?.contractsPendingSignature ?? 0),
+      milestonesCompleted: Number(milestonesResult[0]?.milestonesCompleted ?? 0),
+      invoicesRequiringPayment: Number(invoicesResult[0]?.invoicesRequiringPayment ?? 0),
+      pendingTimesheets: Number(timesheetsResult[0]?.pendingTimesheets ?? 0),
+      pendingTimeOffRequests: Number(timeOffResult[0]?.pendingTimeOffRequests ?? 0),
     };
   }
 }

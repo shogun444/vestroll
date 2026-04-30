@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
     };
 
 
+    response.cookies.set("access_token", result.accessToken, cookieOptions);
     response.cookies.set("refreshToken", result.refreshToken, cookieOptions);
 
     return response;

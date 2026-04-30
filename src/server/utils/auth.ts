@@ -7,6 +7,8 @@ import crypto from "crypto";
 import { JWTTokenService } from "../services/jwt-token.service";
 import { SessionService } from "../services/session.service";
 
+import { JWTService } from "../services/jwt.service";
+
 interface TokenPayload {
   userId: string;
   email: string;
@@ -15,52 +17,19 @@ interface TokenPayload {
 }
 
 export class AuthUtils {
-  private static readonly SECRET = process.env.JWT_SECRET || "vestroll-secret-key";
-  private static readonly TOKEN_EXPIRY = 24 * 60 * 60 * 1000;
-
-  static generateToken(userId: string, email: string): string {
-    const payload: TokenPayload = {
-      userId,
-      email,
-      iat: Date.now(),
-      exp: Date.now() + this.TOKEN_EXPIRY,
-    };
-
-    const payloadString = Buffer.from(JSON.stringify(payload)).toString("base64url");
-    const signature = crypto
-      .createHmac("sha256", this.SECRET)
-      .update(payloadString)
-      .digest("base64url");
-
-    return `${payloadString}.${signature}`;
+  static async generateToken(userId: string, email: string): Promise<string> {
+    return await JWTService.generateAccessToken({ userId, email });
   }
 
-  static verifyToken(token: string): TokenPayload | null {
+  static async verifyToken(token: string): Promise<TokenPayload | null> {
     try {
-      const [payloadString, signature] = token.split(".");
-
-      if (!payloadString || !signature) {
-        return null;
-      }
-
-      const expectedSignature = crypto
-        .createHmac("sha256", this.SECRET)
-        .update(payloadString)
-        .digest("base64url");
-
-      if (signature !== expectedSignature) {
-        return null;
-      }
-
-      const payload: TokenPayload = JSON.parse(
-        Buffer.from(payloadString, "base64url").toString()
-      );
-
-      if (payload.exp < Date.now()) {
-        return null;
-      }
-
-      return payload;
+      const payload = await JWTService.verifyAccessToken(token);
+      return {
+        userId: payload.userId,
+        email: payload.email,
+        iat: (payload.iat ?? 0) * 1000,
+        exp: (payload.exp ?? 0) * 1000,
+      };
     } catch {
       return null;
     }
@@ -85,33 +54,51 @@ export class AuthUtils {
     email: string;
     user: typeof users.$inferSelect;
   }> {
-    const token = this.extractToken(request);
+    const authHeaderToken = this.extractToken(request);
+    const cookieToken = request.cookies.get("access_token")?.value;
+    
+    // Defensive check: sometimes request.cookies is not fully populated in some environments
+    let fallbackCookieToken = null;
+    if (!cookieToken) {
+      const cookieHeader = request.headers.get("cookie");
+      fallbackCookieToken = cookieHeader?.match(/access_token=([^;]+)/)?.[1];
+    }
+
+    const token = authHeaderToken ?? cookieToken ?? fallbackCookieToken;
 
     if (!token) {
       throw new UnauthorizedError("Authentication required");
     }
 
-    const payload = this.verifyToken(token);
+    try {
+      const payload = await this.verifyToken(token);
+      if (!payload) {
+        throw new UnauthorizedError("Invalid or expired token");
+      }
 
-    if (!payload) {
-      throw new UnauthorizedError("Invalid or expired token");
+      const [user] = await db.select().from(users).where(eq(users.id, payload.userId));
+      if (!user) {
+        throw new UnauthorizedError("User not found");
+      }
+
+      if (user.status === "suspended") {
+        throw new UnauthorizedError("Account is suspended");
+      }
+
+      return {
+        userId: payload.userId,
+        email: payload.email,
+        user,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedError) throw error;
+      console.error("[AuthUtils.authenticateRequest Error]", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        token: token ? `${token.substring(0, 10)}...` : "none"
+      });
+      throw error;
     }
-
-    const [user] = await db.select().from(users).where(eq(users.id, payload.userId));
-
-    if (!user) {
-      throw new UnauthorizedError("User not found");
-    }
-
-    if (user.status === "suspended") {
-      throw new UnauthorizedError("Account is suspended");
-    }
-
-    return {
-      userId: payload.userId,
-      email: payload.email,
-      user,
-    };
   }
 
   static async authenticateRequestOrRefreshCookie(request: NextRequest): Promise<{
@@ -130,7 +117,7 @@ export class AuthUtils {
       throw new UnauthorizedError("Authentication required");
     }
 
-    const payload = await JWTTokenService.verifyToken(refreshToken);
+    const payload = await JWTService.verifyRefreshToken(refreshToken);
     const userId =
       payload && typeof payload.userId === "string" ? payload.userId : null;
     const email = payload && typeof payload.email === "string" ? payload.email : null;
@@ -178,5 +165,23 @@ export class AuthUtils {
 
   static getUserAgent(request: NextRequest): string | undefined {
     return request.headers.get("user-agent") || undefined;
+  }
+
+  static async getCurrentUser() {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+
+    if (!token) {
+      return null;
+    }
+
+    const payload = await this.verifyToken(token);
+    if (!payload) {
+      return null;
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, payload.userId));
+    return user || null;
   }
 }

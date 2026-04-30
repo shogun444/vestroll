@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       message: "Logged out successfully",
     });
     response.cookies.delete("refreshToken");
+    response.cookies.delete("access_token");
 
     return response;
   } catch (error) {

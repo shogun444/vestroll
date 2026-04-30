@@ -1,8 +1,7 @@
 import { db } from "../db";
 import { sessions, users } from "../db/schema";
 import { eq } from "drizzle-orm";
-import { JWTVerificationService } from "./jwt-verification.service";
-import { JWTTokenService } from "./jwt-token.service";
+import { JWTService } from "./jwt.service";
 import { PasswordVerificationService } from "./password-verification.service";
 import {
     ExpiredTokenError,
@@ -13,11 +12,11 @@ import {
 import { Logger } from "./logger.service";
 
 export class TokenRefreshService {
-    static async refresh(refreshToken: string, userAgent?: string, ipAddress?: string) {
+    static async refresh(refreshToken: string, _userAgent?: string, ipAddress?: string) {
 
         let payload;
         try {
-            payload = await JWTVerificationService.verify(refreshToken);
+            payload = await JWTService.verifyRefreshToken(refreshToken);
         } catch (error) {
             Logger.error("Token refresh verification failed", { ipAddress, error: String(error) });
             throw error;
@@ -56,19 +55,16 @@ export class TokenRefreshService {
             throw new InternalAuthError("User not found");
         }
 
-        const accessToken = await JWTTokenService.generateAccessToken({
+        const accessToken = await JWTService.generateAccessToken({
             userId: user.id,
             email: user.email,
         });
 
-
-        const tokenExp = payload.exp as number;
-
-        const newRefreshToken = await JWTTokenService.generateRotatedRefreshToken({
+        const newRefreshToken = await JWTService.generateRefreshToken({
             userId: user.id,
             email: user.email,
             sessionId
-        }, tokenExp);
+        });
 
         const newRefreshTokenHash = await PasswordVerificationService.hash(newRefreshToken);
 

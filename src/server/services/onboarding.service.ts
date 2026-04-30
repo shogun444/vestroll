@@ -59,7 +59,7 @@ export class OnboardingService {
 
     const companyInfoProvided = companyProfileResult.length > 0;
     const kybVerified = kybResult[0]?.status === "verified";
-    const walletFunded = !!(walletResult[0] as { funded?: boolean })?.funded;
+    const walletFunded = !!(walletResult[0] as any)?.funded;
 
     const steps: OnboardingStep[] = [
       { key: "emailVerified", label: "Email Verification", completed: emailVerified },

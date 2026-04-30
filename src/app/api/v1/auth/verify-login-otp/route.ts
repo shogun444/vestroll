@@ -61,6 +61,7 @@ export const POST = withHandler(
       maxAge: body.rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
     };
 
+    response.cookies.set("access_token", result.accessToken, cookieOptions);
     response.cookies.set("refreshToken", result.refreshToken, cookieOptions);
 
     return response;

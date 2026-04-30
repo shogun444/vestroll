@@ -47,16 +47,21 @@ export const POST = withHandler(
     const response = ApiResponse.success(result, result.message);
 
     // Set refresh token cookie if provided (e.g., during OTP-based login or social auth)
-    const resultWithOptionalRefreshToken = result as typeof result & { refreshToken?: string };
-    if (resultWithOptionalRefreshToken.refreshToken) {
+    const resultWithTokens = result as typeof result & { refreshToken?: string; accessToken?: string };
+    if (resultWithTokens.refreshToken) {
       const isProd = process.env.NODE_ENV === "production";
-      response.cookies.set("refreshToken", resultWithOptionalRefreshToken.refreshToken, {
+      const cookieOptions = {
         httpOnly: true,
         secure: isProd,
-        sameSite: "lax",
+        sameSite: "lax" as const,
         path: "/",
         maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
+      };
+
+      response.cookies.set("refreshToken", resultWithTokens.refreshToken, cookieOptions);
+      if (resultWithTokens.accessToken) {
+        response.cookies.set("access_token", resultWithTokens.accessToken, cookieOptions);
+      }
     }
 
     return response;

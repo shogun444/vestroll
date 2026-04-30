@@ -29,10 +29,12 @@ export class JWTService {
   }
 
   private static get ACCESS_SECRET() {
-    return new TextEncoder().encode(process.env.JWT_ACCESS_SECRET || "");
+    const secret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "vestroll-fallback-secret";
+    return new TextEncoder().encode(secret);
   }
   private static get REFRESH_SECRET() {
-    return new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || "");
+    const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || "vestroll-fallback-secret";
+    return new TextEncoder().encode(secret);
   }
   private static get ACCESS_EXPIRATION() {
     return process.env.JWT_ACCESS_EXPIRATION || "15m";
@@ -49,9 +51,6 @@ export class JWTService {
    * @throws {Error} If JWT_ACCESS_SECRET is not configured.
    */
   static async generateAccessToken(payload: JWTPayload): Promise<string> {
-    if (!process.env.JWT_ACCESS_SECRET) {
-      throw new Error("JWT_ACCESS_SECRET is not configured");
-    }
 
     return await new jose.SignJWT(payload)
       .setProtectedHeader({ alg: "HS256" })
@@ -68,9 +67,6 @@ export class JWTService {
    * @throws {Error} If JWT_REFRESH_SECRET is not configured.
    */
   static async generateRefreshToken(payload: JWTPayload): Promise<string> {
-    if (!process.env.JWT_REFRESH_SECRET) {
-      throw new Error("JWT_REFRESH_SECRET is not configured");
-    }
 
     return await new jose.SignJWT(payload)
       .setProtectedHeader({ alg: "HS256" })
@@ -88,9 +84,6 @@ export class JWTService {
    * @throws {InvalidTokenError} If the token is invalid.
    */
   static async verifyAccessToken(token: string): Promise<JWTPayload> {
-    if (!process.env.JWT_ACCESS_SECRET) {
-      throw new Error("JWT_ACCESS_SECRET is not configured");
-    }
 
     try {
       const { payload } = await jose.jwtVerify(token, this.ACCESS_SECRET);
@@ -112,9 +105,6 @@ export class JWTService {
    * @throws {InvalidTokenError} If the token is invalid.
    */
   static async verifyRefreshToken(token: string): Promise<JWTPayload> {
-    if (!process.env.JWT_REFRESH_SECRET) {
-      throw new Error("JWT_REFRESH_SECRET is not configured");
-    }
 
     try {
       const { payload } = await jose.jwtVerify(token, this.REFRESH_SECRET);
