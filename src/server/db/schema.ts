@@ -684,6 +684,7 @@ export const fiatTransactions = pgTable(
     providerReference: varchar("provider_reference", { length: 255 })
       .notNull()
       .unique(),
+    reference: varchar("reference", { length: 255 }).unique(),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

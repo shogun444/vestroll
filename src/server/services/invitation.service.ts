@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { organizationInvitations, users, organizations } from "../db/schema";
-import { eq, and, desc, lt } from "drizzle-orm";
+import { eq, and, desc, lt, count } from "drizzle-orm";
 import crypto from "crypto";
 import { addDays, isPast } from "date-fns";
 import type { SQL } from "drizzle-orm";
@@ -264,12 +264,14 @@ class InvitationService {
       .offset(offset);
 
     // Get total count
-    const [{ count }] = await db
-      .select({ count: organizationInvitations.id })
+    const [countResult] = await db
+      .select({ value: count() })
       .from(organizationInvitations)
       .where(and(...whereConditions));
 
-    return toPaginatedResponse(invitations, page, limit, Number(count));
+    const total = countResult?.value ?? 0;
+
+    return toPaginatedResponse(invitations, page, limit, Number(total));
   }
 
   async acceptInvitation(token: string, userId: string): Promise<void> {
