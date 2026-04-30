@@ -11,6 +11,7 @@ interface FileUploadProps {
   className?: string;
   isUploading?: boolean;
   uploadProgress?: number;
+  error?: string;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -22,6 +23,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   className = "",
   isUploading = false,
   uploadProgress = 0,
+  error,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const componentId = label.replace(/\s+/g, "-").toLowerCase();
@@ -280,6 +282,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
           className="hidden"
           id={`file-${componentId}`}
         />
+      )}
+
+      {error && (
+        <p className="mt-2 text-sm text-red-600 font-medium">
+          {error}
+        </p>
       )}
     </div>
   );

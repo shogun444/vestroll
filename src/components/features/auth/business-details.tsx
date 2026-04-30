@@ -27,8 +27,9 @@ interface FormErrors {
   businessDescription?: string;
   registrationType?: string;
   registrationNo?: string;
-  incorporationCertificate?: string;
-  memorandumArticle?: string;
+  incorporationCertificatePath?: string;
+  memorandumArticlePath?: string;
+  formC02C07Path?: string;
 }
 
 interface DropdownProps {
@@ -219,11 +220,11 @@ const BusinessRegistrationForm: React.FC = () => {
     }
 
     if (!formData.incorporationCertificatePath) {
-      newErrors.incorporationCertificate = "Incorporation certificate is required";
+      newErrors.incorporationCertificatePath = "Incorporation certificate is required";
     }
 
     if (!formData.memorandumArticlePath) {
-      newErrors.memorandumArticle = "Memorandum & Article is required";
+      newErrors.memorandumArticlePath = "Memorandum & Article is required";
     }
 
     setErrors(newErrors);
@@ -258,12 +259,12 @@ const BusinessRegistrationForm: React.FC = () => {
 
       // 3. Update state
       setFormData((prev) => ({ ...prev, [field]: key }));
-      if (errors[field as keyof FormErrors]) {
-        setErrors((prev) => ({ ...prev, [field as keyof FormErrors]: undefined }));
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     } catch (error) {
       console.error("Upload failed:", error);
-      setErrors((prev) => ({ ...prev, [field as keyof FormErrors]: "Upload failed. Please try again." }));
+      setErrors((prev) => ({ ...prev, [field]: "Upload failed. Please try again." }));
     }
   };
 
@@ -496,7 +497,7 @@ const BusinessRegistrationForm: React.FC = () => {
                 file={formData.incorporationCertificatePath ? new File([], "Uploaded Certificate") : null}
                 accept=".png,.jpg,.jpeg,.pdf"
                 maxSize={5}
-                error={errors.incorporationCertificate}
+                error={errors.incorporationCertificatePath}
               />
 
               <FileUpload
@@ -505,7 +506,7 @@ const BusinessRegistrationForm: React.FC = () => {
                 file={formData.memorandumArticlePath ? new File([], "Uploaded Memorandum") : null}
                 accept=".png,.jpg,.jpeg,.pdf"
                 maxSize={5}
-                error={errors.memorandumArticle}
+                error={errors.memorandumArticlePath}
               />
 
               <FileUpload
