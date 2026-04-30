@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MOCK_ASSETS, generateMockTransactions  } from "@/lib/mock-data";
 import { BalanceSection } from "@/components/features/finance/balance-section";
 import { AssetsGrid } from "@/components/features/finance/assets-grid";
+import { DepositModal } from "@/components/features/finance/DepositModal";
 import Table from "@/components/shared/table/Table";
 import { TableColumn } from "@/components/shared/table/TableHeader";
 import type { Transaction } from "@/types/finance.types";
@@ -131,6 +132,7 @@ export default function FinancePage() {
           { signal: controller.signal },
         );
         const payload = (await response.json()) as TransactionsResponse;
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
         if (!response.ok || !payload.success || !payload.data) {
           throw new Error(payload.message || "Unable to load transactions");
@@ -314,6 +316,12 @@ export default function FinancePage() {
                 Finance
               </h1>
             </div>
+            <button
+              onClick={() => setIsDepositModalOpen(true)}
+              className="px-4 py-2 bg-[#1C6B4A] text-white rounded-full text-sm font-medium hover:bg-[#145a3d] transition-colors"
+            >
+              Deposit Funds
+            </button>
           </header>
         </motion.div>
 
@@ -379,6 +387,11 @@ export default function FinancePage() {
             />
           </div>
         </motion.div>
+
+        <DepositModal
+          open={isDepositModalOpen}
+          onOpenChange={setIsDepositModalOpen}
+        />
       </div>
     </div>
   );
