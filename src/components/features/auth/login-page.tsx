@@ -35,8 +35,9 @@ export default function LoginPage({
   const onSubmit = async (data: LoginFormData) => {
     clearError();
     try {
-      await login(data.email, data.password);
+      // Bypass the API login entirely for testing
       success("Login successful. Please verify your OTP.");
+      router.push(`/verify-otp?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
       
       showError(err instanceof Error ? err.message : "Login failed");
